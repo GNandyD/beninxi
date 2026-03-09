@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/context/AuthContext';
 
 const categories = [
   { label: 'Vêtements',  href: '/catalogue?cat=vetements',  emoji: '👗' },
@@ -14,8 +15,10 @@ const categories = [
 
 export default function Navbar() {
   const { totalItems, setIsOpen } = useCart();
-  const [search, setSearch] = useState('');
-  const [focused, setFocused] = useState(false);
+  const { user, signOut }         = useAuth();
+  const [search, setSearch]       = useState('');
+  const [focused, setFocused]     = useState(false);
+  const [showMenu, setShowMenu]   = useState(false);
 
   return (
     <header style={{ position: 'sticky', top: 0, zIndex: 100, fontFamily: 'var(--font-dm)' }}>
@@ -31,7 +34,7 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
-            <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 900, fontSize: '1.75rem', lineHeight: 1, letterSpacing: -1 }}>
+            <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.75rem', lineHeight: 1, letterSpacing: -1 }}>
               <span style={{ color: '#1B5E20' }}>BÉNIN</span><span style={{ color: '#C62828' }}>XI</span>
             </div>
             <div style={{ fontSize: '0.55rem', letterSpacing: 3, color: '#AAA', textAlign: 'center', marginTop: 1, fontWeight: 700 }}>LE MARCHÉ DU BÉNIN</div>
@@ -59,14 +62,56 @@ export default function Navbar() {
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
-            <Link href="/connexion" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '8px 14px', borderRadius: 12, textDecoration: 'none', color: '#0A0A0A' }}>
-              <span style={{ fontSize: '1.25rem' }}>👤</span>
-              <span style={{ fontSize: '0.62rem', fontWeight: 600, color: '#888' }}>Compte</span>
-            </Link>
+
+            {/* Favoris */}
             <Link href="/catalogue" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '8px 14px', borderRadius: 12, textDecoration: 'none', color: '#0A0A0A' }}>
               <span style={{ fontSize: '1.25rem' }}>❤️</span>
               <span style={{ fontSize: '0.62rem', fontWeight: 600, color: '#888' }}>Favoris</span>
             </Link>
+
+            {/* Compte — connecté ou non */}
+            {user ? (
+              <div style={{ position: 'relative' }}>
+                <button onClick={() => setShowMenu(!showMenu)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '8px 14px', borderRadius: 12, background: showMenu ? '#F0FAF0' : 'none', border: 'none', cursor: 'pointer' }}>
+                  <span style={{ fontSize: '1.25rem' }}>👤</span>
+                  <span style={{ fontSize: '0.62rem', fontWeight: 700, color: '#1B5E20' }}>
+                    {user.user_metadata?.prenom || 'Mon compte'}
+                  </span>
+                </button>
+                {showMenu && (
+                  <div style={{ position: 'absolute', top: '100%', right: 0, background: '#fff', borderRadius: 16, border: '1px solid #F0F0F0', boxShadow: '0 8px 32px rgba(0,0,0,0.12)', padding: '8px', minWidth: 200, zIndex: 200, marginTop: 8 }}>
+                    <div style={{ padding: '12px 16px', borderBottom: '1px solid #F5F5F5', marginBottom: 4 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0A0A0A', fontFamily: 'var(--font-sora)' }}>
+                        {user.user_metadata?.prenom} {user.user_metadata?.nom}
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#AAA', marginTop: 2 }}>{user.email}</div>
+                    </div>
+                    {[
+                      { label: '📦 Mes commandes',  href: '/connexion' },
+                      { label: '❤️ Mes favoris',    href: '/catalogue' },
+                      { label: '📍 Mes adresses',   href: '/connexion' },
+                      { label: '⚙️ Mon profil',     href: '/connexion' },
+                    ].map(item => (
+                      <Link key={item.label} href={item.href} onClick={() => setShowMenu(false)} style={{ display: 'block', padding: '10px 16px', borderRadius: 10, color: '#0A0A0A', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500, transition: 'background 0.15s' }}>
+                        {item.label}
+                      </Link>
+                    ))}
+                    <div style={{ borderTop: '1px solid #F5F5F5', marginTop: 4, paddingTop: 4 }}>
+                      <button onClick={() => { signOut(); setShowMenu(false); }} style={{ display: 'block', width: '100%', padding: '10px 16px', borderRadius: 10, color: '#C62828', background: 'none', border: 'none', fontSize: '0.85rem', fontWeight: 700, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-dm)' }}>
+                        🚪 Se déconnecter
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link href="/connexion" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '8px 14px', borderRadius: 12, textDecoration: 'none', color: '#0A0A0A' }}>
+                <span style={{ fontSize: '1.25rem' }}>👤</span>
+                <span style={{ fontSize: '0.62rem', fontWeight: 600, color: '#888' }}>Compte</span>
+              </Link>
+            )}
+
+            {/* Panier */}
             <button onClick={() => setIsOpen(true)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '8px 14px', borderRadius: 12, background: totalItems > 0 ? '#FFF8E1' : 'none', border: 'none', cursor: 'pointer', position: 'relative' }}>
               <span style={{ fontSize: '1.25rem' }}>🛒</span>
               {totalItems > 0 && (
@@ -93,6 +138,9 @@ export default function Navbar() {
           ))}
         </div>
       </nav>
+
+      {/* Overlay menu */}
+      {showMenu && <div onClick={() => setShowMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 199 }} />}
     </header>
   );
 }
