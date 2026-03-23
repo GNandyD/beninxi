@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { supabase } from '@/lib/supabase';
 import { useCart } from '@/context/CartContext';
-
+import { useFavorites } from '@/context/FavoritesContext';
 function fmt(p) { return p?.toLocaleString('fr-FR') + ' FCFA'; }
 
 const reviewsList = [
@@ -23,8 +23,8 @@ export default function ProductPage({ params: paramsPromise }) {
   const [activeTab,  setActiveTab]  = useState('description');
   const [qty,        setQty]        = useState(1);
   const [added,      setAdded]      = useState(false);
-  const [liked,      setLiked]      = useState(false);
-
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const liked = isFavorite(product?.id);
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -106,7 +106,7 @@ export default function ProductPage({ params: paramsPromise }) {
                   -{discount}%
                 </div>
               )}
-              <button onClick={() => setLiked(!liked)} style={{ position: 'absolute', top: 20, right: 20, width: 48, height: 48, borderRadius: '50%', background: liked ? '#FFF0F0' : 'rgba(255,255,255,0.95)', border: liked ? '2px solid #C62828' : 'none', cursor: 'pointer', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>
+              <button onClick={() => toggleFavorite(product)} style={{ position: 'absolute', top: 20, right: 20, width: 48, height: 48, borderRadius: '50%', background: liked ? '#FFF0F0' : 'rgba(255,255,255,0.95)', border: liked ? '2px solid #C62828' : 'none', cursor: 'pointer', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.1)' }}>
                 {liked ? '❤️' : '🤍'}
               </button>
               {product.stock <= 10 && (

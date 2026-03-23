@@ -2,6 +2,7 @@ import { Sora, DM_Sans } from 'next/font/google';
 import './globals.css';
 import { CartProvider } from '@/context/CartContext';
 import { AuthProvider } from '@/context/AuthContext';
+import { FavoritesProvider } from '@/context/FavoritesContext';
 import CartDrawer from '@/components/CartDrawer';
 
 const sora = Sora({ subsets: ['latin'], variable: '--font-sora', weight: ['400','600','700','800'] });
@@ -17,10 +18,12 @@ export default function RootLayout({ children }) {
     <html lang="fr" className={`${sora.variable} ${dmSans.variable}`}>
       <body>
         <AuthProvider>
-          <CartProvider>
-            {children}
-            <CartDrawer />
-          </CartProvider>
+          <FavoritesProvider>
+            <CartProvider>
+              {children}
+              <CartDrawer />
+            </CartProvider>
+          </FavoritesProvider>
         </AuthProvider>
       </body>
     </html>

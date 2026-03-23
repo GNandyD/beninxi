@@ -1,4 +1,5 @@
 'use client';
+import { useFavorites } from '@/context/FavoritesContext';
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
@@ -41,7 +42,8 @@ function SkeletonCard() {
 function ProductCard({ p }) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const liked = isFavorite(p.id);
   const discount = p.old_price ? Math.round((1 - p.price / p.old_price) * 100) : 0;
 
   function handleAdd(e) {
@@ -66,7 +68,7 @@ function ProductCard({ p }) {
             -{discount}%
           </div>
         )}
-        <button onClick={e => { e.preventDefault(); setLiked(!liked); }} style={{ position: 'absolute', top: 10, right: 10, width: 34, height: 34, borderRadius: '50%', background: liked ? '#FFF0F0' : 'rgba(255,255,255,0.95)', border: liked ? '1.5px solid #C62828' : 'none', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+        <button onClick={e => { e.preventDefault(); toggleFavorite(p); }} style={{ position: 'absolute', top: 10, right: 10, width: 34, height: 34, borderRadius: '50%', background: liked ? '#FFF0F0' : 'rgba(255,255,255,0.95)', border: liked ? '1.5px solid #C62828' : 'none', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
           {liked ? '❤️' : '🤍'}
         </button>
         <button onClick={handleAdd} style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', background: added ? '#1B5E20' : '#fff', color: added ? '#fff' : '#0A0A0A', border: 'none', padding: '9px 22px', borderRadius: 50, fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'var(--font-sora)', transition: 'all 0.2s', whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(0,0,0,0.18)' }}>
