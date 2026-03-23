@@ -94,10 +94,10 @@ export default function Navbar() {
                       <div style={{ fontSize: '0.72rem', color: '#AAA', marginTop: 2 }}>{user.email}</div>
                     </div>
                     {[
-                      { label: '📦 Mes commandes',  href: '/connexion' },
+                      { label: '📦 Mes commandes',  href: '/compte' },
                       { label: '❤️ Mes favoris',    href: '/catalogue' },
-                      { label: '📍 Mes adresses',   href: '/connexion' },
-                      { label: '⚙️ Mon profil',     href: '/connexion' },
+                      { label: '📍 Mes adresses',   href: '/compte' },
+                      { label: '⚙️ Mon profil',     href: '/compte' },
                     ].map(item => (
                       <Link key={item.label} href={item.href} onClick={() => setShowMenu(false)} style={{ display: 'block', padding: '10px 16px', borderRadius: 10, color: '#0A0A0A', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 500, transition: 'background 0.15s' }}>
                         {item.label}
