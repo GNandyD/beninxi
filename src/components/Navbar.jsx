@@ -3,6 +3,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { useFavorites } from '@/context/FavoritesContext';
 
 const categories = [
   { label: 'Vêtements',  href: '/catalogue?cat=vetements',  emoji: '👗' },
@@ -16,6 +17,7 @@ const categories = [
 export default function Navbar() {
   const { totalItems, setIsOpen } = useCart();
   const { user, signOut }         = useAuth();
+  const { favorites }             = useFavorites();
   const [search, setSearch]       = useState('');
   const [focused, setFocused]     = useState(false);
   const [showMenu, setShowMenu]   = useState(false);
@@ -64,10 +66,15 @@ export default function Navbar() {
           <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexShrink: 0 }}>
 
             {/* Favoris */}
-            <Link href="/catalogue" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '8px 14px', borderRadius: 12, textDecoration: 'none', color: '#0A0A0A' }}>
-              <span style={{ fontSize: '1.25rem' }}>❤️</span>
-              <span style={{ fontSize: '0.62rem', fontWeight: 600, color: '#888' }}>Favoris</span>
-            </Link>
+<Link href="/favoris" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '8px 14px', borderRadius: 12, textDecoration: 'none', color: '#0A0A0A', position: 'relative' }}>
+  <span style={{ fontSize: '1.25rem' }}>❤️</span>
+  {favorites.length > 0 && (
+    <span style={{ position: 'absolute', top: 4, right: 8, background: '#C62828', color: '#fff', fontSize: '0.6rem', width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, border: '2px solid #fff' }}>
+      {favorites.length}
+    </span>
+  )}
+  <span style={{ fontSize: '0.62rem', fontWeight: 600, color: '#888' }}>Favoris</span>
+</Link>
 
             {/* Compte — connecté ou non */}
             {user ? (
