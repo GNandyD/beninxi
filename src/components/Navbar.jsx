@@ -25,10 +25,6 @@ export default function Navbar() {
   return (
     <header style={{ position: 'sticky', top: 0, zIndex: 100, fontFamily: 'var(--font-dm)' }}>
 
-      {/* Top stripe */}
-      <div style={{ background: '#1B5E20', color: 'rgba(255,255,255,0.9)', textAlign: 'center', padding: '9px 16px', fontSize: '0.78rem', fontWeight: 600, letterSpacing: 0.3 }}>
-        🚚 Livraison gratuite dès 50 000 FCFA à Cotonou &nbsp;·&nbsp; 📱 MTN Money & Moov Money &nbsp;·&nbsp; 🎁 <strong>-10%</strong> sur votre 1ère commande : <strong>BENINXI10</strong>
-      </div>
 
       {/* Main bar */}
       <div style={{ background: '#fff', borderBottom: '1px solid #EFEFEF', padding: '0 40px' }}>
