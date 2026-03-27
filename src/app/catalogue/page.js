@@ -1,6 +1,7 @@
 'use client';
+import { useSearchParams } from 'next/navigation';
 import { useFavorites } from '@/context/FavoritesContext';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import { supabase } from '@/lib/supabase';
@@ -96,7 +97,7 @@ function ProductCard({ p }) {
   );
 }
 
-export default function CataloguePage() {
+function CatalogueContent() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [search, setSearch]     = useState('');
@@ -104,7 +105,7 @@ export default function CataloguePage() {
   const [sort, setSort]         = useState('popular');
   const [priceMax, setPriceMax] = useState(500000);
   const [minRating, setMinRating] = useState(0);
-
+  const searchParams = useSearchParams();
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -113,7 +114,11 @@ export default function CataloguePage() {
       setLoading(false);
     }
     load();
-  }, []);
+    const q   = searchParams.get('q');
+    const cat = searchParams.get('cat');
+    if (q)   setSearch(q);
+    if (cat) setCategory(cat);
+  }, [searchParams]);
 
   const filtered = useMemo(() => {
     let r = [...products];
@@ -152,6 +157,12 @@ export default function CataloguePage() {
               <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.88rem' }}>
                 {loading ? '...' : `${filtered.length} produit${filtered.length > 1 ? 's' : ''} disponible${filtered.length > 1 ? 's' : ''}`}
               </p>
+            </div>
+            {/* Search */}
+            <div style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, overflow: "hidden", minWidth: 340 }}>
+              <span style={{ padding: "0 12px 0 16px", color: "rgba(255,255,255,0.4)", fontSize: "0.9rem" }}>🔍</span>
+              <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher un produit..." style={{ flex: 1, border: "none", background: "none", padding: "13px 0", fontSize: "0.9rem", outline: "none", fontFamily: "var(--font-dm)", color: "#fff" }} />
+              {search && <button onClick={() => setSearch("")} style={{ padding: "0 14px", background: "none", border: "none", cursor: "pointer", color: "rgba(255,255,255,0.4)" }}>✕</button>}
             </div>
           </div>
 
@@ -270,5 +281,13 @@ export default function CataloguePage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function CataloguePage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Chargement...</div>}>
+      <CatalogueContent />
+    </Suspense>
   );
 }
