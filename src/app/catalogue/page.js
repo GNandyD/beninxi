@@ -153,18 +153,6 @@ export default function CataloguePage() {
                 {loading ? '...' : `${filtered.length} produit${filtered.length > 1 ? 's' : ''} disponible${filtered.length > 1 ? 's' : ''}`}
               </p>
             </div>
-            {/* Search */}
-            <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, overflow: 'hidden', minWidth: 340 }}>
-              <span style={{ padding: '0 12px 0 16px', color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem' }}>🔍</span>
-              <input
-                type="text"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Rechercher un produit..."
-                style={{ flex: 1, border: 'none', background: 'none', padding: '13px 0', fontSize: '0.9rem', outline: 'none', fontFamily: 'var(--font-dm)', color: '#fff' }}
-              />
-              {search && <button onClick={() => setSearch('')} style={{ padding: '0 14px', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}>✕</button>}
-            </div>
           </div>
 
           {/* Category tabs */}
