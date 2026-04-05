@@ -176,11 +176,11 @@ export default function HomePage() {
         <div style={{ position: 'absolute', top: -100, left: -100, width: 600, height: 600, borderRadius: '50%', background: `${s.accent}06`, pointerEvents: 'none' }} />
 
         {/* Texte */}
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '100px 64px 100px 80px', position: 'relative', zIndex: 2 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 'clamp(32px, 8vw, 100px) clamp(20px, 5vw, 80px)', position: 'relative', zIndex: 2 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: `${s.accent}18`, border: `1px solid ${s.accent}40`, color: s.accent, padding: '8px 18px', borderRadius: 50, fontSize: '0.72rem', fontWeight: 800, marginBottom: 32, fontFamily: 'var(--font-sora)', letterSpacing: 2, width: 'fit-content' }}>
             ✦ {s.tag}
           </div>
-          <h1 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: 'clamp(3rem, 5.5vw, 5rem)', color: '#fff', lineHeight: 1.02, marginBottom: 28, whiteSpace: 'pre-line', letterSpacing: -2 }}>
+          <h1 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: 'clamp(1.8rem, 5.5vw, 5rem)', color: '#fff', lineHeight: 1.02, marginBottom: 28, whiteSpace: 'pre-line', letterSpacing: -2 }}>
             {s.title}
           </h1>
           <p style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.6)', marginBottom: 44, lineHeight: 1.75, maxWidth: 420, fontFamily: 'var(--font-dm)' }}>
@@ -204,7 +204,7 @@ export default function HomePage() {
         </div>
 
         {/* Image */}
-        <div style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 80px 60px 40px' }}>
+        <div style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'clamp(32px, 6vw, 60px) clamp(16px, 5vw, 80px)' }}>
           <div style={{ position: 'relative', width: '100%', maxWidth: 520, aspectRatio: '4/5', borderRadius: 32, overflow: 'hidden', boxShadow: `0 60px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)` }}>
             <img
               src={s.img}
@@ -222,7 +222,7 @@ export default function HomePage() {
         </div>
 
         {/* Stats en bas */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '20px 80px', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '20px clamp(16px, 5vw, 80px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 20 }}>
           {[
             { num: '2 000+', label: 'Produits' },
             { num: '50 000+', label: 'Clients satisfaits' },
@@ -248,7 +248,7 @@ export default function HomePage() {
             Tout voir <span style={{ fontSize: '1.1rem' }}>→</span>
           </Link>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 14 }}>
           {categories.map((cat, i) => (
             <Link key={i} href={cat.href} style={{ textDecoration: 'none', display: 'block', borderRadius: 20, overflow: 'hidden', position: 'relative', aspectRatio: '3/4', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', transition: 'transform 0.3s' }}>
               <img src={cat.img} alt={cat.label} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
@@ -283,7 +283,7 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 20 }}>
               {flash.map(p => <ProductCard key={p.id} p={p} />)}
             </div>
           </div>
@@ -301,7 +301,7 @@ export default function HomePage() {
             Voir tout →
           </Link>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 20 }}>
           {loading ? [1,2,3,4,5,6,7,8].map(i => <SkeletonCard key={i} />) : products.map(p => <ProductCard key={p.id} p={p} />)}
         </div>
       </section>
