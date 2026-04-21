@@ -39,13 +39,18 @@ export default function Navbar() {
         <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', alignItems: 'center', gap: isMobile ? 12 : 28, height: isMobile ? 60 : 72 }}>
 
           {/* Logo */}
-          <Link href="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
-            <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: isMobile ? '1.3rem' : '1.75rem', lineHeight: 1, letterSpacing: -1 }}>
-              <span style={{ color: '#1B5E20' }}>BÉNIN</span><span style={{ color: '#C62828' }}>XI</span>
-            </div>
-            <div style={{ fontSize: '0.5rem', letterSpacing: 2, color: '#AAA', textAlign: 'center', marginTop: 1, fontWeight: 700 }}>LE MARCHÉ DU BÉNIN</div>
-          </Link>
-
+        {/* Logo */}
+<Link href="/" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
+  <img src="/logo.png" alt="BéninXi" style={{ height: isMobile ? 36 : 44, width: 'auto', objectFit: 'contain' }} />
+  {!isMobile && (
+    <div>
+      <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.4rem', lineHeight: 1, letterSpacing: -0.5 }}>
+        <span style={{ color: '#1B5E20' }}>BÉNIN</span><span style={{ color: '#C62828' }}>XI</span>
+      </div>
+      <div style={{ fontSize: '0.5rem', letterSpacing: 2, color: '#AAA', marginTop: 1, fontWeight: 700 }}>LE MARCHÉ DU BÉNIN</div>
+    </div>
+  )}
+</Link>
           {/* Search — caché sur mobile */}
           {!isMobile && (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', border: `2px solid ${focused ? '#1B5E20' : '#EFEFEF'}`, borderRadius: 14, overflow: 'hidden', background: focused ? '#fff' : '#FAFAFA', transition: 'all 0.2s' }}>
