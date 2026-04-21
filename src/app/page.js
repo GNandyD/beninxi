@@ -222,7 +222,7 @@ export default function HomePage() {
         </div>
 
         {/* Stats en bas */}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '20px clamp(16px, 5vw, 80px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 20 }}>
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '20px clamp(16px, 5vw, 80px)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
           {[
             { num: '2 000+', label: 'Produits' },
             { num: '50 000+', label: 'Clients satisfaits' },
@@ -248,7 +248,7 @@ export default function HomePage() {
             Tout voir <span style={{ fontSize: '1.1rem' }}>→</span>
           </Link>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14 }}>
           {categories.map((cat, i) => (
             <Link key={i} href={cat.href} style={{ textDecoration: 'none', display: 'block', borderRadius: 20, overflow: 'hidden', position: 'relative', aspectRatio: '3/4', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', transition: 'transform 0.3s' }}>
               <img src={cat.img} alt={cat.label} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
@@ -283,7 +283,7 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 20 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
               {flash.map(p => <ProductCard key={p.id} p={p} />)}
             </div>
           </div>
@@ -301,7 +301,7 @@ export default function HomePage() {
             Voir tout →
           </Link>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
           {loading ? [1,2,3,4,5,6,7,8].map(i => <SkeletonCard key={i} />) : products.map(p => <ProductCard key={p.id} p={p} />)}
         </div>
       </section>

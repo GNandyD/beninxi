@@ -177,7 +177,7 @@ function CatalogueContent() {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1320, margin: '0 auto', padding: 'clamp(16px, 4vw, 32px) clamp(12px, 4vw, 40px)', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 28, alignItems: 'start' }}>
+      <div style={{ maxWidth: 1320, margin: '0 auto', padding: 'clamp(16px, 4vw, 32px) clamp(12px, 4vw, 40px)', display: 'grid', gridTemplateColumns: '260px 1fr', gap: 28, alignItems: 'start' }}>
 
         {/* ═══ SIDEBAR ═══ */}
         <div style={{ background: '#fff', borderRadius: 20, padding: '28px', boxShadow: '0 2px 16px rgba(0,0,0,0.05)', border: '1px solid #F0F0F0', position: 'sticky', top: 100 }}>
@@ -261,7 +261,7 @@ function CatalogueContent() {
 
           {/* Grid */}
           {loading ? (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 18 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
               {[1,2,3,4,5,6].map(i => <SkeletonCard key={i} />)}
             </div>
           ) : filtered.length === 0 ? (
@@ -274,7 +274,7 @@ function CatalogueContent() {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 18 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
               {filtered.map(p => <ProductCard key={p.id} p={p} />)}
             </div>
           )}
