@@ -1,106 +1,106 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar';
-import { supabase } from '@/lib/supabase';
 import { useCart } from '@/context/CartContext';
+import { useFavorites } from '@/context/FavoritesContext';
+import { supabase } from '@/lib/supabase';
+import Navbar from '@/components/Navbar';
 
 function fmt(p) { return p?.toLocaleString('fr-FR') + ' FCFA'; }
 
-const heroSlides = [
+const slides = [
   {
-    tag: 'NOUVELLE COLLECTION 2026',
-    title: 'La Mode\nAfricaine\nRedéfinie.',
-    sub: 'Robes wax, boubous premium et tenues modernes. Livraison rapide à Cotonou.',
-    cta: 'Découvrir',
+    tag: '✦ NOUVELLE COLLECTION',
+    title: 'Mode\nAfricaine\nPremium.',
+    sub: 'Robes wax, boubous brodés et tenues traditionnelles confectionnés par des artisans béninois.',
+    cta: 'Explorer la mode',
     href: '/catalogue?cat=vetements',
-    bg: '#0A0A0A',
-    accent: '#F9A825',
-    img: 'https://images.unsplash.com/photo-1558171813-1a5ee65fa0a2?w=800&q=90',
+    bg: 'linear-gradient(135deg, #0A0A0A 0%, #1B3A1F 50%, #0F2D12 100%)',
+    accent: '#2A9455',
+    img: 'https://images.unsplash.com/photo-1558171813-1a5ee65fa0a2?w=800&q=80',
   },
   {
-    tag: 'COLLECTION LUXE',
-    title: 'Montres &\nBijoux\nPremium.',
-    sub: 'Colliers, chaînes et montres de prestige. Authenticité garantie.',
-    cta: 'Explorer',
+    tag: '⌚ MONTRES & BIJOUX',
+    title: 'L\'Élégance\nà Portée\nde Main.',
+    sub: 'Montres premium, colliers et chaînes dorées pour sublimer chaque occasion.',
+    cta: 'Voir les montres',
     href: '/catalogue?cat=montres',
-    bg: '#0D1B2A',
-    accent: '#C62828',
-    img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=90',
+    bg: 'linear-gradient(135deg, #0A0A0A 0%, #2D1A00 50%, #1A0F00 100%)',
+    accent: '#F9A825',
+    img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80',
   },
   {
-    tag: 'ART DE VIVRE',
+    tag: '🛋️ ART DE VIVRE',
     title: 'Votre\nIntérieur\nSublimé.',
     sub: 'Meubles artisanaux béninois. Livraison et montage inclus à Cotonou.',
     cta: 'Voir les meubles',
     href: '/catalogue?cat=meubles',
-    bg: '#1A0A00',
-    accent: '#1B5E20',
-    img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=90',
+    bg: 'linear-gradient(135deg, #0A0A0A 0%, #1A0A0A 50%, #2D1010 100%)',
+    accent: '#C62828',
+    img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80',
   },
 ];
 
 const categories = [
-  { label: 'Vêtements',  href: '/catalogue?cat=vetements',  emoji: '👗', img: 'https://images.unsplash.com/photo-1558171813-1a5ee65fa0a2?w=600&q=80'    },
-  { label: 'Chaussures', href: '/catalogue?cat=chaussures', emoji: '👟', img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80'    },
-  { label: 'Meubles',    href: '/catalogue?cat=meubles',    emoji: '🛋️', img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80'   },
-  { label: 'Montres',    href: '/catalogue?cat=montres',    emoji: '⌚', img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80'  },
-  { label: 'Colliers',   href: '/catalogue?cat=colliers',   emoji: '📿', img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&q=80' },
-  { label: 'Chaînes',    href: '/catalogue?cat=chaines',    emoji: '⛓️', img: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=600&q=80' },
+  { id: 'vetements',  label: 'Vêtements',  emoji: '👗', img: 'https://images.unsplash.com/photo-1558171813-1a5ee65fa0a2?w=400&q=80' },
+  { id: 'chaussures', label: 'Chaussures', emoji: '👟', img: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&q=80' },
+  { id: 'meubles',    label: 'Meubles',    emoji: '🛋️', img: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&q=80' },
+  { id: 'montres',    label: 'Montres',    emoji: '⌚', img: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80' },
+  { id: 'colliers',   label: 'Colliers',   emoji: '📿', img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&q=80' },
+  { id: 'chaines',    label: 'Chaînes',    emoji: '⛓️', img: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&q=80' },
 ];
 
 function ProductCard({ p }) {
   const { addItem } = useCart();
+  const { toggleFavorite, isFavorite } = useFavorites();
   const [added, setAdded] = useState(false);
-  const [liked, setLiked] = useState(false);
+  const liked = isFavorite(p.id);
   const discount = p.old_price ? Math.round((1 - p.price / p.old_price) * 100) : 0;
 
   function handleAdd(e) {
     e.preventDefault();
     addItem({ id: p.id, name: p.name, price: p.price, img: p.img, color: 'Standard', size: 'Standard', qty: 1 });
     setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
+    setTimeout(() => setAdded(false), 1800);
   }
 
   return (
-    <Link href={`/produit/${p.id}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #F0F0F0', transition: 'transform 0.3s, box-shadow 0.3s', boxShadow: '0 2px 20px rgba(0,0,0,0.06)' }}>
-      <div style={{ position: 'relative', height: 280, overflow: 'hidden', background: '#F8F8F8' }}>
-        <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.6s' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 50%)' }} />
+    <Link href={`/produit/${p.id}`} className="card-hover" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #F0F0F0', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
+      <div className="img-zoom" style={{ position: 'relative', height: 260, overflow: 'hidden', background: '#F8F8F8' }}>
+        <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 55%)' }} />
         {p.badge && (
-          <div style={{ position: 'absolute', top: 14, left: 14, background: ['Luxe','Premium'].includes(p.badge) ? '#0A0A0A' : '#1B5E20', color: '#fff', padding: '5px 13px', borderRadius: 50, fontSize: '0.68rem', fontWeight: 800, fontFamily: 'var(--font-sora)', letterSpacing: 0.8 }}>
+          <div style={{ position: 'absolute', top: 12, left: 12, background: ['Luxe','Premium'].includes(p.badge) ? '#0A0A0A' : '#1B5E20', color: '#fff', padding: '4px 12px', borderRadius: 999, fontSize: '0.66rem', fontWeight: 800, fontFamily: 'var(--font-sora)', letterSpacing: 0.5 }}>
             {p.badge}
           </div>
         )}
         {discount > 0 && (
-          <div style={{ position: 'absolute', top: 14, right: 50, background: '#C62828', color: '#fff', padding: '5px 10px', borderRadius: 50, fontSize: '0.68rem', fontWeight: 800 }}>
+          <div style={{ position: 'absolute', top: 12, right: 46, background: '#C62828', color: '#fff', padding: '4px 10px', borderRadius: 999, fontSize: '0.66rem', fontWeight: 800 }}>
             -{discount}%
           </div>
         )}
-        <button onClick={e => { e.preventDefault(); setLiked(!liked); }} style={{ position: 'absolute', top: 10, right: 10, width: 36, height: 36, borderRadius: '50%', background: liked ? '#FFF0F0' : 'rgba(255,255,255,0.95)', border: liked ? '1.5px solid #C62828' : 'none', cursor: 'pointer', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.12)' }}>
+        <button onClick={e => { e.preventDefault(); toggleFavorite(p); }} style={{ position: 'absolute', top: 10, right: 10, width: 34, height: 34, borderRadius: '50%', background: liked ? '#FFF0F0' : 'rgba(255,255,255,0.95)', border: liked ? '1.5px solid #C62828' : 'none', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s' }}>
           {liked ? '❤️' : '🤍'}
         </button>
-        <button onClick={handleAdd} style={{ position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)', background: added ? '#1B5E20' : '#fff', color: added ? '#fff' : '#0A0A0A', border: 'none', padding: '10px 28px', borderRadius: 50, fontWeight: 800, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'var(--font-sora)', transition: 'all 0.2s', whiteSpace: 'nowrap', boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}>
-          {added ? '✓ Ajouté !' : '+ Ajouter au panier'}
+        <button onClick={handleAdd} style={{ position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)', background: added ? '#1B5E20' : 'rgba(255,255,255,0.95)', color: added ? '#fff' : '#0A0A0A', border: 'none', padding: '9px 22px', borderRadius: 999, fontWeight: 800, fontSize: '0.76rem', cursor: 'pointer', fontFamily: 'var(--font-sora)', transition: 'all 0.25s', whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }}>
+          {added ? '✓ Ajouté !' : '+ Panier'}
         </button>
       </div>
-      <div style={{ padding: '16px 18px 20px' }}>
-        <div style={{ fontSize: '0.63rem', color: '#AAA', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 5, fontFamily: 'var(--font-sora)' }}>{p.seller}</div>
-        <div style={{ fontWeight: 700, fontSize: '0.94rem', color: '#0A0A0A', marginBottom: 10, lineHeight: 1.35, fontFamily: 'var(--font-dm)' }}>{p.name}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginBottom: 12 }}>
-          {[1,2,3,4,5].map(i => <span key={i} style={{ color: i <= Math.floor(p.rating) ? '#F9A825' : '#E8E8E8', fontSize: '0.75rem' }}>★</span>)}
-          <span style={{ fontSize: '0.7rem', color: '#999', marginLeft: 4, fontFamily: 'var(--font-dm)' }}>({p.reviews})</span>
+      <div style={{ padding: '14px 16px 18px' }}>
+        <div style={{ fontSize: '0.6rem', color: '#BBB', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 5, fontFamily: 'var(--font-sora)' }}>{p.seller}</div>
+        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0A0A0A', marginBottom: 8, lineHeight: 1.35, fontFamily: 'var(--font-dm)' }}>{p.name}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 10 }}>
+          {[1,2,3,4,5].map(i => <span key={i} style={{ color: i <= Math.floor(p.rating) ? '#F9A825' : '#EBEBEB', fontSize: '0.7rem' }}>★</span>)}
+          <span style={{ fontSize: '0.66rem', color: '#BBB', marginLeft: 4 }}>({p.reviews})</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F5F5F5', paddingTop: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F5F5F5', paddingTop: 10 }}>
           <div>
-            <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.05rem', color: '#1B5E20' }}>{fmt(p.price)}</div>
-            {p.old_price && <div style={{ fontSize: '0.72rem', color: '#CCC', textDecoration: 'line-through', marginTop: 1 }}>{fmt(p.old_price)}</div>}
+            <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1rem', color: '#1B5E20' }}>{fmt(p.price)}</div>
+            {p.old_price && <div style={{ fontSize: '0.68rem', color: '#CCC', textDecoration: 'line-through' }}>{fmt(p.old_price)}</div>}
           </div>
-          {p.old_price && (
-            <div style={{ background: '#FFF8E1', color: '#E65100', padding: '4px 10px', borderRadius: 8, fontSize: '0.7rem', fontWeight: 800 }}>
-              Économisez {fmt(p.old_price - p.price)}
-            </div>
-          )}
+          <button onClick={handleAdd} style={{ width: 32, height: 32, borderRadius: '50%', background: added ? '#1B5E20' : '#F5F5F5', border: 'none', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', color: added ? '#fff' : '#0A0A0A' }}>
+            {added ? '✓' : '+'}
+          </button>
         </div>
       </div>
     </Link>
@@ -109,272 +109,230 @@ function ProductCard({ p }) {
 
 function SkeletonCard() {
   return (
-    <div style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid #F0F0F0', background: '#fff' }}>
-      <div style={{ height: 280, background: 'linear-gradient(90deg, #F5F5F5 25%, #EFEFEF 50%, #F5F5F5 75%)', backgroundSize: '200% 100%' }} />
-      <div style={{ padding: '16px 18px' }}>
-        <div style={{ height: 10, background: '#F5F5F5', borderRadius: 5, width: '40%', marginBottom: 10 }} />
-        <div style={{ height: 14, background: '#F5F5F5', borderRadius: 5, marginBottom: 8 }} />
-        <div style={{ height: 10, background: '#F5F5F5', borderRadius: 5, width: '30%' }} />
+    <div style={{ borderRadius: 20, overflow: 'hidden', border: '1px solid #F0F0F0' }}>
+      <div className="skeleton" style={{ height: 260 }} />
+      <div style={{ padding: '14px 16px 18px' }}>
+        <div className="skeleton" style={{ height: 8, width: '35%', marginBottom: 10 }} />
+        <div className="skeleton" style={{ height: 12, marginBottom: 8 }} />
+        <div className="skeleton" style={{ height: 8, width: '25%' }} />
       </div>
     </div>
   );
 }
 
 export default function HomePage() {
-  const [slide, setSlide] = useState(0);
+  const [slide, setSlide]       = useState(0);
   const [products, setProducts] = useState([]);
-  const [flash, setFlash] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [timeLeft, setTimeLeft] = useState({ h: 5, m: 59, s: 59 });
-  const [imgLoaded, setImgLoaded] = useState(false);
+  const [loading, setLoading]   = useState(true);
+  const [seconds, setSeconds]   = useState({ h: 2, m: 47, s: 33 });
+  const intervalRef = useRef(null);
 
   useEffect(() => {
-    const t = setInterval(() => setSlide(s => (s + 1) % heroSlides.length), 6000);
-    return () => clearInterval(t);
+    intervalRef.current = setInterval(() => setSlide(s => (s + 1) % slides.length), 5000);
+    return () => clearInterval(intervalRef.current);
   }, []);
 
   useEffect(() => {
-    setImgLoaded(false);
-    const t = setTimeout(() => setImgLoaded(true), 100);
-    return () => clearTimeout(t);
-  }, [slide]);
-
-  useEffect(() => {
     const t = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev.s > 0) return { ...prev, s: prev.s - 1 };
-        if (prev.m > 0) return { ...prev, m: prev.m - 1, s: 59 };
-        if (prev.h > 0) return { h: prev.h - 1, m: 59, s: 59 };
-        return { h: 5, m: 59, s: 59 };
+      setSeconds(prev => {
+        let { h, m, s } = prev;
+        s--; if (s < 0) { s = 59; m--; } if (m < 0) { m = 59; h--; } if (h < 0) { h = 0; m = 0; s = 0; }
+        return { h, m, s };
       });
     }, 1000);
     return () => clearInterval(t);
   }, []);
 
   useEffect(() => {
-    async function load() {
-      const { data } = await supabase.from('products').select('*').order('sold', { ascending: false }).limit(8);
+    supabase.from('products').select('*').limit(8).then(({ data }) => {
       setProducts(data || []);
-      const { data: f } = await supabase.from('products').select('*').not('old_price', 'is', null).limit(4);
-      setFlash(f || []);
       setLoading(false);
-    }
-    load();
+    });
   }, []);
 
-  const s = heroSlides[slide];
+  const pad = n => String(n).padStart(2, '0');
+  const s = slides[slide];
 
   return (
-    <main style={{ background: '#fff', minHeight: '100vh' }}>
+    <main style={{ background: '#fff', minHeight: '100vh', fontFamily: 'var(--font-dm)' }}>
       <Navbar />
 
-      {/* ═══════════ HERO ═══════════ */}
+      {/* ═══ HERO ═══ */}
       <section style={{ background: s.bg, minHeight: '92vh', display: 'grid', gridTemplateColumns: '1fr 1fr', position: 'relative', overflow: 'hidden', transition: 'background 1s' }}>
 
         {/* Fond décoratif */}
-        <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(ellipse at 80% 50%, ${s.accent}18 0%, transparent 65%)`, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: -100, left: -100, width: 600, height: 600, borderRadius: '50%', background: `${s.accent}06`, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(255,255,255,0.03) 0%, transparent 60%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.03) 0%, transparent 60%)' }} />
 
-        {/* Texte */}
+        {/* Contenu gauche */}
         <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 'clamp(32px, 8vw, 100px) clamp(20px, 5vw, 80px)', position: 'relative', zIndex: 2 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: `${s.accent}18`, border: `1px solid ${s.accent}40`, color: s.accent, padding: '8px 18px', borderRadius: 50, fontSize: '0.72rem', fontWeight: 800, marginBottom: 32, fontFamily: 'var(--font-sora)', letterSpacing: 2, width: 'fit-content' }}>
-            ✦ {s.tag}
+          <div key={`tag-${slide}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: `${s.accent}18`, border: `1px solid ${s.accent}40`, color: s.accent, padding: '8px 18px', borderRadius: 999, fontSize: '0.7rem', fontWeight: 800, marginBottom: 28, fontFamily: 'var(--font-sora)', letterSpacing: 2, width: 'fit-content', animation: 'fadeUp 0.6s ease' }}>
+            {s.tag}
           </div>
-          <h1 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: 'clamp(1.8rem, 5.5vw, 5rem)', color: '#fff', lineHeight: 1.02, marginBottom: 28, whiteSpace: 'pre-line', letterSpacing: -2 }}>
+          <h1 key={`title-${slide}`} style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: 'clamp(1.8rem, 5.5vw, 5rem)', color: '#fff', lineHeight: 1.02, marginBottom: 28, whiteSpace: 'pre-line', letterSpacing: -2, animation: 'fadeUp 0.6s ease 0.1s both' }}>
             {s.title}
           </h1>
-          <p style={{ fontSize: '1.05rem', color: 'rgba(255,255,255,0.6)', marginBottom: 44, lineHeight: 1.75, maxWidth: 420, fontFamily: 'var(--font-dm)' }}>
+          <p key={`sub-${slide}`} style={{ fontSize: 'clamp(0.88rem, 1.2vw, 1.05rem)', color: 'rgba(255,255,255,0.6)', marginBottom: 44, lineHeight: 1.75, maxWidth: 420, fontFamily: 'var(--font-dm)', animation: 'fadeUp 0.6s ease 0.2s both' }}>
             {s.sub}
           </p>
-          <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
-            <Link href={s.href} style={{ background: s.accent, color: s.accent === '#F9A825' ? '#0A0A0A' : '#fff', textDecoration: 'none', padding: '16px 40px', borderRadius: 50, fontWeight: 800, fontSize: '0.95rem', fontFamily: 'var(--font-sora)', boxShadow: `0 12px 32px ${s.accent}50`, letterSpacing: 0.3, display: 'inline-block', transition: 'transform 0.2s' }}>
+          <div key={`cta-${slide}`} style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', animation: 'fadeUp 0.6s ease 0.3s both' }}>
+            <Link href={s.href} className="btn-press" style={{ background: s.accent, color: s.accent === '#F9A825' ? '#0A0A0A' : '#fff', textDecoration: 'none', padding: '16px 36px', borderRadius: 999, fontWeight: 800, fontSize: '0.92rem', fontFamily: 'var(--font-sora)', boxShadow: `0 12px 32px ${s.accent}50`, letterSpacing: 0.3, display: 'inline-block', transition: 'transform 0.2s' }}>
               {s.cta} →
             </Link>
-            <Link href="/catalogue" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none', fontSize: '0.88rem', fontWeight: 600, fontFamily: 'var(--font-dm)', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 2 }}>
+            <Link href="/catalogue" style={{ color: 'rgba(255,255,255,0.45)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600, fontFamily: 'var(--font-dm)', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 2, transition: 'color 0.2s' }}>
               Voir tout le catalogue
             </Link>
           </div>
 
           {/* Dots */}
-          <div style={{ display: 'flex', gap: 10, marginTop: 52, alignItems: 'center' }}>
-            {heroSlides.map((_, i) => (
-              <button key={i} onClick={() => setSlide(i)} style={{ width: i === slide ? 32 : 8, height: 8, borderRadius: 4, background: i === slide ? s.accent : 'rgba(255,255,255,0.2)', border: 'none', cursor: 'pointer', transition: 'all 0.4s', padding: 0 }} />
+          <div style={{ display: 'flex', gap: 8, marginTop: 52 }}>
+            {slides.map((_, i) => (
+              <button key={i} onClick={() => { clearInterval(intervalRef.current); setSlide(i); }} style={{ width: i === slide ? 28 : 8, height: 8, borderRadius: 999, background: i === slide ? s.accent : 'rgba(255,255,255,0.2)', border: 'none', cursor: 'pointer', transition: 'all 0.3s ease', padding: 0 }} />
             ))}
           </div>
         </div>
 
-        {/* Image */}
+        {/* Image droite */}
         <div style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'clamp(32px, 6vw, 60px) clamp(16px, 5vw, 80px)' }}>
-          <div style={{ position: 'relative', width: '100%', maxWidth: 520, aspectRatio: '4/5', borderRadius: 32, overflow: 'hidden', boxShadow: `0 60px 120px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)` }}>
-            <img
-              src={s.img}
-              alt="hero"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: imgLoaded ? 1 : 0, transition: 'opacity 0.6s', transform: 'scale(1.02)' }}
-              onLoad={() => setImgLoaded(true)}
-            />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.4) 0%, transparent 50%)' }} />
-            {/* Badge flottant */}
-            <div style={{ position: 'absolute', bottom: 24, left: 24, background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 16, padding: '14px 20px', color: '#fff' }}>
-              <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.6)', marginBottom: 3, fontFamily: 'var(--font-sora)', letterSpacing: 1 }}>LIVRAISON</div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 800, fontFamily: 'var(--font-sora)' }}>Gratuite dès 50 000 FCFA</div>
-            </div>
-          </div>
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, rgba(255,255,255,0.04) 0%, transparent 70%)' }} />
+          <img key={`img-${slide}`} src={s.img} alt="" style={{ width: '100%', maxWidth: 520, height: 520, objectFit: 'cover', borderRadius: 32, boxShadow: `0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)`, animation: 'scaleIn 0.6s ease', position: 'relative', zIndex: 1 }} />
         </div>
 
-        {/* Stats en bas */}
+        {/* Stats bar */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '20px clamp(16px, 5vw, 80px)', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
           {[
-            { num: '2 000+', label: 'Produits' },
-            { num: '50 000+', label: 'Clients satisfaits' },
-            { num: '24–48h', label: 'Livraison Cotonou' },
-            { num: '4.9 ★', label: 'Note moyenne' },
+            { num: '2 000+', label: 'Produits', icon: '🛍️' },
+            { num: '50k+',   label: 'Clients',  icon: '👥' },
+            { num: '24–48h', label: 'Livraison', icon: '🚚' },
+            { num: '4.9 ★',  label: 'Note',     icon: '⭐' },
           ].map((stat, i) => (
-            <div key={i} style={{ textAlign: 'center' }}>
-              <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.3rem', color: s.accent }}>{stat.num}</div>
-              <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', marginTop: 3, fontFamily: 'var(--font-dm)' }}>{stat.label}</div>
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: '1.4rem' }}>{stat.icon}</span>
+              <div>
+                <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.3rem', color: s.accent }}>{stat.num}</div>
+                <div style={{ fontSize: '0.68rem', color: 'rgba(255,255,255,0.6)', letterSpacing: 1, fontWeight: 600 }}>{stat.label}</div>
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ═══════════ CATÉGORIES ═══════════ */}
-      <section style={{ maxWidth: 1320, margin: '0 auto', padding: '88px 40px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48 }}>
+      {/* ═══ CATÉGORIES ═══ */}
+      <section style={{ padding: '80px clamp(20px, 5vw, 80px)', maxWidth: 1320, margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
           <div>
-            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#C62828', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10, fontFamily: 'var(--font-sora)' }}>PARCOURIR</div>
-            <h2 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: 'clamp(1.8rem, 3vw, 2.8rem)', color: '#0A0A0A', letterSpacing: -1 }}>Nos catégories</h2>
+            <div style={{ fontSize: '0.7rem', color: '#BBB', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8, fontFamily: 'var(--font-sora)' }}>EXPLORER</div>
+            <h2 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', color: '#0A0A0A', letterSpacing: -1 }}>Nos catégories</h2>
           </div>
-          <Link href="/catalogue" style={{ color: '#666', fontSize: '0.88rem', textDecoration: 'none', fontFamily: 'var(--font-dm)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
-            Tout voir <span style={{ fontSize: '1.1rem' }}>→</span>
-          </Link>
+          <Link href="/catalogue" style={{ color: '#1B5E20', fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none', fontFamily: 'var(--font-sora)', letterSpacing: 0.3 }}>Voir tout →</Link>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14 }}>
-          {categories.map((cat, i) => (
-            <Link key={i} href={cat.href} style={{ textDecoration: 'none', display: 'block', borderRadius: 20, overflow: 'hidden', position: 'relative', aspectRatio: '3/4', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', transition: 'transform 0.3s' }}>
+          {categories.map(cat => (
+            <Link key={cat.id} href={`/catalogue?cat=${cat.id}`} className="card-hover img-zoom" style={{ textDecoration: 'none', borderRadius: 20, overflow: 'hidden', position: 'relative', aspectRatio: '3/4', display: 'block', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
               <img src={cat.img} alt={cat.label} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.1) 60%, transparent 100%)' }} />
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '20px 16px' }}>
-                <div style={{ fontSize: '1.4rem', marginBottom: 6 }}>{cat.emoji}</div>
-                <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '0.92rem', color: '#fff', lineHeight: 1.2 }}>{cat.label}</div>
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%)' }} />
+              <div style={{ position: 'absolute', bottom: 14, left: 14 }}>
+                <div style={{ fontSize: '1.3rem', marginBottom: 4 }}>{cat.emoji}</div>
+                <div style={{ color: '#fff', fontWeight: 800, fontSize: '0.82rem', fontFamily: 'var(--font-sora)', letterSpacing: 0.3 }}>{cat.label}</div>
               </div>
             </Link>
           ))}
         </div>
       </section>
 
-      {/* ═══════════ FLASH SALE ═══════════ */}
-      {flash.length > 0 && (
-        <section style={{ background: '#0A0A0A', padding: '88px 0' }}>
-          <div style={{ maxWidth: 1320, margin: '0 auto', padding: '0 40px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 48 }}>
-              <div>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#C6282818', border: '1px solid #C6282840', color: '#C62828', padding: '6px 16px', borderRadius: 50, fontSize: '0.72rem', fontWeight: 800, marginBottom: 14, fontFamily: 'var(--font-sora)', letterSpacing: 1.5 }}>
-                  ⚡ VENTE FLASH
-                </div>
-                <h2 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '2.2rem', color: '#fff', letterSpacing: -0.5 }}>Offres du moment</h2>
-              </div>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', fontFamily: 'var(--font-dm)', marginRight: 4 }}>Se termine dans</span>
-                {[String(timeLeft.h).padStart(2,'0'), String(timeLeft.m).padStart(2,'0'), String(timeLeft.s).padStart(2,'0')].map((v, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <div style={{ background: '#1A1A1A', border: '1px solid #333', color: '#fff', padding: '10px 14px', borderRadius: 10, fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.1rem', minWidth: 50, textAlign: 'center' }}>{v}</div>
-                    {i < 2 && <span style={{ color: '#555', fontSize: '1.1rem', fontWeight: 800 }}>:</span>}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-              {flash.map(p => <ProductCard key={p.id} p={p} />)}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* ═══════════ PRODUITS POPULAIRES ═══════════ */}
-      <section style={{ maxWidth: 1320, margin: '0 auto', padding: '88px 40px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48 }}>
+      {/* ═══ FLASH SALE ═══ */}
+      <section style={{ background: '#0A0A0A', padding: '56px clamp(20px, 5vw, 80px)', margin: '0 0 80px' }}>
+        <div style={{ maxWidth: 1320, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
           <div>
-            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1B5E20', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 10, fontFamily: 'var(--font-sora)' }}>TENDANCES</div>
-            <h2 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: 'clamp(1.8rem, 3vw, 2.8rem)', color: '#0A0A0A', letterSpacing: -1 }}>Les plus populaires</h2>
+            <div style={{ fontSize: '0.7rem', color: '#C62828', fontWeight: 800, letterSpacing: 2, marginBottom: 8, fontFamily: 'var(--font-sora)' }}>⚡ OFFRE LIMITÉE</div>
+            <h2 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', color: '#fff', letterSpacing: -1, marginBottom: 8 }}>Flash Sale</h2>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.88rem', fontFamily: 'var(--font-dm)' }}>Jusqu'à -40% sur une sélection de produits</p>
           </div>
-          <Link href="/catalogue" style={{ background: '#0A0A0A', color: '#fff', textDecoration: 'none', padding: '12px 28px', borderRadius: 50, fontWeight: 700, fontSize: '0.85rem', fontFamily: 'var(--font-sora)', display: 'inline-block' }}>
-            Voir tout →
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            {[{ val: pad(seconds.h), label: 'H' }, { val: pad(seconds.m), label: 'MIN' }, { val: pad(seconds.s), label: 'SEC' }].map(({ val, label }, i) => (
+              <div key={i} style={{ textAlign: 'center' }}>
+                <div style={{ background: '#1A1A1A', border: '1px solid #2A2A2A', borderRadius: 14, padding: '14px 18px', fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.8rem', color: '#F9A825', minWidth: 64, letterSpacing: -1 }}>{val}</div>
+                <div style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700, letterSpacing: 2, marginTop: 6 }}>{label}</div>
+              </div>
+            ))}
+          </div>
+          <Link href="/catalogue" className="btn-press" style={{ background: '#C62828', color: '#fff', textDecoration: 'none', padding: '14px 32px', borderRadius: 999, fontWeight: 800, fontSize: '0.88rem', fontFamily: 'var(--font-sora)', letterSpacing: 0.3, boxShadow: '0 8px 24px rgba(198,40,40,0.4)' }}>
+            Voir les offres →
           </Link>
+        </div>
+      </section>
+
+      {/* ═══ PRODUITS POPULAIRES ═══ */}
+      <section style={{ padding: '0 clamp(20px, 5vw, 80px) 80px', maxWidth: 1320, margin: '0 auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 40 }}>
+          <div>
+            <div style={{ fontSize: '0.7rem', color: '#BBB', fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8, fontFamily: 'var(--font-sora)' }}>TENDANCES</div>
+            <h2 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', color: '#0A0A0A', letterSpacing: -1 }}>Les plus populaires</h2>
+          </div>
+          <Link href="/catalogue" style={{ color: '#1B5E20', fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none', fontFamily: 'var(--font-sora)', letterSpacing: 0.3 }}>Voir tout →</Link>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-          {loading ? [1,2,3,4,5,6,7,8].map(i => <SkeletonCard key={i} />) : products.map(p => <ProductCard key={p.id} p={p} />)}
+          {loading ? [1,2,3,4].map(i => <SkeletonCard key={i} />) : products.map(p => <ProductCard key={p.id} p={p} />)}
         </div>
       </section>
 
-      {/* ═══════════ DOUBLE BANNER ═══════════ */}
-      <section style={{ maxWidth: 1320, margin: '0 auto', padding: '0 40px 88px' }}>
+      {/* ═══ DOUBLE BANNER ═══ */}
+      <section style={{ padding: '0 clamp(20px, 5vw, 80px) 80px', maxWidth: 1320, margin: '0 auto' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-          <Link href="/catalogue?cat=vetements" style={{ textDecoration: 'none', borderRadius: 28, overflow: 'hidden', position: 'relative', height: 360, display: 'block' }}>
-            <img src="https://images.unsplash.com/photo-1558171813-1a5ee65fa0a2?w=800&q=80" alt="Mode" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(27,94,32,0.92) 0%, rgba(27,94,32,0.4) 100%)' }} />
-            <div style={{ position: 'absolute', inset: 0, padding: '44px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-              <div style={{ background: 'rgba(249,168,37,0.2)', color: '#F9A825', padding: '5px 14px', borderRadius: 50, fontSize: '0.68rem', fontWeight: 800, display: 'inline-block', marginBottom: 14, fontFamily: 'var(--font-sora)', letterSpacing: 1.5, width: 'fit-content' }}>NOUVELLE COLLECTION</div>
-              <h3 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '2rem', color: '#fff', marginBottom: 8, letterSpacing: -0.5, lineHeight: 1.1 }}>Mode Africaine<br /><span style={{ color: '#F9A825' }}>Printemps 2026</span></h3>
-              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontFamily: 'var(--font-dm)', marginBottom: 24 }}>Robes wax, boubous et tenues modernes</span>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: '#1B5E20', padding: '12px 24px', borderRadius: 50, fontWeight: 800, fontSize: '0.85rem', fontFamily: 'var(--font-sora)', width: 'fit-content' }}>
-                Découvrir →
+          {[
+            { title: 'Mode & Style', sub: 'Nouvelle collection printemps', href: '/catalogue?cat=vetements', img: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80', color: '#1B5E20' },
+            { title: 'Montres & Bijoux', sub: 'Éditions limitées', href: '/catalogue?cat=montres', img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&q=80', color: '#C62828' },
+          ].map((b, i) => (
+            <Link key={i} href={b.href} className="card-hover img-zoom" style={{ textDecoration: 'none', borderRadius: 24, overflow: 'hidden', position: 'relative', height: 280, display: 'block', boxShadow: '0 8px 32px rgba(0,0,0,0.1)' }}>
+              <img src={b.img} alt={b.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${b.color}CC 0%, transparent 60%)` }} />
+              <div style={{ position: 'absolute', bottom: 28, left: 28 }}>
+                <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.5rem', color: '#fff', letterSpacing: -0.5, marginBottom: 6 }}>{b.title}</div>
+                <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.85rem', marginBottom: 14 }}>{b.sub}</div>
+                <div style={{ background: 'rgba(255,255,255,0.95)', color: '#0A0A0A', padding: '8px 18px', borderRadius: 999, fontSize: '0.78rem', fontWeight: 800, display: 'inline-block', fontFamily: 'var(--font-sora)' }}>
+                  Découvrir →
+                </div>
               </div>
-            </div>
-          </Link>
-          <Link href="/catalogue?cat=montres" style={{ textDecoration: 'none', borderRadius: 28, overflow: 'hidden', position: 'relative', height: 360, display: 'block' }}>
-            <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80" alt="Montres" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(10,10,10,0.95) 0%, rgba(10,10,10,0.4) 100%)' }} />
-            <div style={{ position: 'absolute', inset: 0, padding: '44px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-              <div style={{ background: 'rgba(249,168,37,0.2)', color: '#F9A825', padding: '5px 14px', borderRadius: 50, fontSize: '0.68rem', fontWeight: 800, display: 'inline-block', marginBottom: 14, fontFamily: 'var(--font-sora)', letterSpacing: 1.5, width: 'fit-content' }}>JUSQU'À -40%</div>
-              <h3 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '2rem', color: '#fff', marginBottom: 8, letterSpacing: -0.5, lineHeight: 1.1 }}>Montres & Bijoux<br /><span style={{ color: '#F9A825' }}>de Luxe</span></h3>
-              <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', fontFamily: 'var(--font-dm)', marginBottom: 24 }}>Colliers, chaînes et montres premium</span>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#F9A825', color: '#0A0A0A', padding: '12px 24px', borderRadius: 50, fontWeight: 800, fontSize: '0.85rem', fontFamily: 'var(--font-sora)', width: 'fit-content' }}>
-                Voir les offres →
-              </div>
-            </div>
-          </Link>
+            </Link>
+          ))}
         </div>
       </section>
 
-      {/* ═══════════ FOOTER ═══════════ */}
-      <footer style={{ background: '#0A0A0A', padding: '72px 40px 36px', fontFamily: 'var(--font-dm)' }}>
+      {/* ═══ FOOTER ═══ */}
+      <footer style={{ background: '#0A0A0A', padding: '64px clamp(20px, 5vw, 80px) 32px' }}>
         <div style={{ maxWidth: 1320, margin: '0 auto' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 56, marginBottom: 56, paddingBottom: 56, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <div>
-              <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.8rem', marginBottom: 18 }}>
-                <span style={{ color: '#1B5E20' }}>BÉNIN</span><span style={{ color: '#F9A825' }}>XI</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                <img src="/logo.png" alt="BéninXi" style={{ height: 40, width: 'auto', objectFit: 'contain' }} />
+                <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.3rem', color: '#fff' }}>
+                  <span style={{ color: '#2A9455' }}>BÉNIN</span><span style={{ color: '#C62828' }}>XI</span>
+                </div>
               </div>
-              <p style={{ fontSize: '0.88rem', lineHeight: 1.85, maxWidth: 280, marginBottom: 28, color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-dm)' }}>
-                La marketplace premium du Bénin. Achetez en toute confiance avec livraison rapide à Cotonou.
-              </p>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {[{ l: '📱 MTN Money', bg: '#FFD700', c: '#0A0A0A' }, { l: '📱 Moov Money', bg: '#0066CC', c: '#fff' }, { l: '💵 Espèces', bg: '#1A1A1A', c: 'rgba(255,255,255,0.6)' }].map(p => (
-                  <span key={p.l} style={{ background: p.bg, color: p.c, padding: '6px 14px', borderRadius: 8, fontSize: '0.72rem', fontWeight: 700 }}>{p.l}</span>
+              <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.85rem', lineHeight: 1.8, maxWidth: 280 }}>Le premier marché digital du Bénin. Achetez vêtements, meubles, montres et bijoux artisanaux.</p>
+              <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
+                {['📱 MTN Money', '📱 Moov Money', '💵 Espèces'].map(p => (
+                  <span key={p} style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', padding: '5px 12px', borderRadius: 999, fontSize: '0.68rem', fontWeight: 600, border: '1px solid rgba(255,255,255,0.08)' }}>{p}</span>
                 ))}
               </div>
             </div>
             {[
-              { title: 'Boutique', links: [['Vêtements', '/catalogue?cat=vetements'], ['Chaussures', '/catalogue?cat=chaussures'], ['Meubles', '/catalogue?cat=meubles'], ['Montres', '/catalogue?cat=montres'], ['Colliers & Chaînes', '/catalogue?cat=colliers']] },
-              { title: 'Mon compte', links: [['Se connecter', '/connexion'], ['Mes commandes', '/connexion'], ['Mes favoris', '/connexion'], ['Mes adresses', '/connexion']] },
-              { title: 'Aide', links: [['Livraison', '/catalogue'], ['Retours', '/catalogue'], ['FAQ', '/catalogue'], ['Contact', '/connexion'], ['Suivi commande', '/connexion']] },
+              { title: 'Boutique', links: ['Vêtements', 'Chaussures', 'Meubles', 'Montres', 'Colliers', 'Chaînes'] },
+              { title: 'Service', links: ['Mon compte', 'Mes commandes', 'Livraison', 'Retours'] },
+              { title: 'À propos', links: ['Notre histoire', 'Vendeurs', 'Blog', 'Contact'] },
             ].map(col => (
               <div key={col.title}>
-                <h4 style={{ color: '#fff', fontSize: '0.88rem', fontWeight: 800, marginBottom: 22, fontFamily: 'var(--font-sora)', letterSpacing: 0.3 }}>{col.title}</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
-                  {col.links.map(([label, href]) => (
-                    <Link key={label} href={href} style={{ fontSize: '0.84rem', color: 'rgba(255,255,255,0.35)', textDecoration: 'none', transition: 'color 0.2s', fontFamily: 'var(--font-dm)' }}>{label}</Link>
+                <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 700, fontSize: '0.78rem', color: 'rgba(255,255,255,0.5)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 20 }}>{col.title}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {col.links.map(l => (
+                    <Link key={l} href="/catalogue" style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'none', fontSize: '0.85rem', fontFamily: 'var(--font-dm)', transition: 'color 0.2s' }}>{l}</Link>
                   ))}
                 </div>
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-            <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.25)' }}>© 2026 BéninXi — 🇧🇯 Fièrement Made in Bénin</div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              {['📘', '📸', '💬'].map((icon, i) => (
-                <div key={i} style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: '0.9rem' }}>{icon}</div>
-              ))}
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+            <div style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.78rem', fontFamily: 'var(--font-dm)' }}>© 2026 BéninXi. Tous droits réservés. 🇧🇯</div>
+            <div style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.78rem' }}>Made with ❤️ in Bénin</div>
           </div>
         </div>
       </footer>
