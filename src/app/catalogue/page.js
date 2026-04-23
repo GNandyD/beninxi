@@ -39,11 +39,10 @@ function SkeletonCard() {
     </div>
   );
 }
-
 function ProductCard({ p }) {
   const { addItem } = useCart();
-  const [added, setAdded] = useState(false);
   const { toggleFavorite, isFavorite } = useFavorites();
+  const [added, setAdded] = useState(false);
   const liked = isFavorite(p.id);
   const discount = p.old_price ? Math.round((1 - p.price / p.old_price) * 100) : 0;
 
@@ -51,44 +50,50 @@ function ProductCard({ p }) {
     e.preventDefault();
     addItem({ id: p.id, name: p.name, price: p.price, img: p.img, color: 'Standard', size: 'Standard', qty: 1 });
     setAdded(true);
-    setTimeout(() => setAdded(false), 1500);
+    setTimeout(() => setAdded(false), 1800);
   }
 
   return (
-    <Link href={`/produit/${p.id}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #F0F0F0', boxShadow: '0 2px 16px rgba(0,0,0,0.05)', transition: 'transform 0.3s, box-shadow 0.3s' }}>
+    <Link href={`/produit/${p.id}`} style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #F0F0F0', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', transition: 'transform 0.3s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.3s ease' }}
+      onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 16px 48px rgba(0,0,0,0.12)'; }}
+      onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.04)'; }}
+    >
       <div style={{ position: 'relative', height: 260, overflow: 'hidden', background: '#F8F8F8' }}>
-        <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.5s' }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 50%)' }} />
+        <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)' }}
+          onMouseEnter={e => e.target.style.transform = 'scale(1.06)'}
+          onMouseLeave={e => e.target.style.transform = 'scale(1)'}
+        />
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.28) 0%, transparent 55%)' }} />
         {p.badge && (
-          <div style={{ position: 'absolute', top: 12, left: 12, background: ['Luxe','Premium'].includes(p.badge) ? '#0A0A0A' : '#1B5E20', color: '#fff', padding: '4px 12px', borderRadius: 50, fontSize: '0.68rem', fontWeight: 800, fontFamily: 'var(--font-sora)', letterSpacing: 0.5 }}>
+          <div style={{ position: 'absolute', top: 12, left: 12, background: ['Luxe','Premium'].includes(p.badge) ? '#0A0A0A' : '#1B5E20', color: '#fff', padding: '4px 12px', borderRadius: 999, fontSize: '0.66rem', fontWeight: 800, fontFamily: 'var(--font-sora)', letterSpacing: 0.5 }}>
             {p.badge}
           </div>
         )}
         {discount > 0 && (
-          <div style={{ position: 'absolute', top: 12, right: 48, background: '#C62828', color: '#fff', padding: '4px 10px', borderRadius: 50, fontSize: '0.68rem', fontWeight: 800 }}>
+          <div style={{ position: 'absolute', top: 12, right: 46, background: '#C62828', color: '#fff', padding: '4px 10px', borderRadius: 999, fontSize: '0.66rem', fontWeight: 800 }}>
             -{discount}%
           </div>
         )}
-        <button onClick={e => { e.preventDefault(); toggleFavorite(p); }} style={{ position: 'absolute', top: 10, right: 10, width: 34, height: 34, borderRadius: '50%', background: liked ? '#FFF0F0' : 'rgba(255,255,255,0.95)', border: liked ? '1.5px solid #C62828' : 'none', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+        <button onClick={e => { e.preventDefault(); toggleFavorite(p); }} style={{ position: 'absolute', top: 10, right: 10, width: 34, height: 34, borderRadius: '50%', background: liked ? '#FFF0F0' : 'rgba(255,255,255,0.95)', border: liked ? '1.5px solid #C62828' : 'none', cursor: 'pointer', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', transition: 'all 0.2s' }}>
           {liked ? '❤️' : '🤍'}
         </button>
-        <button onClick={handleAdd} style={{ position: 'absolute', bottom: 10, left: '50%', transform: 'translateX(-50%)', background: added ? '#1B5E20' : '#fff', color: added ? '#fff' : '#0A0A0A', border: 'none', padding: '9px 22px', borderRadius: 50, fontWeight: 800, fontSize: '0.78rem', cursor: 'pointer', fontFamily: 'var(--font-sora)', transition: 'all 0.2s', whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(0,0,0,0.18)' }}>
+        <button onClick={handleAdd} style={{ position: 'absolute', bottom: 12, left: '50%', transform: 'translateX(-50%)', background: added ? '#1B5E20' : 'rgba(255,255,255,0.95)', color: added ? '#fff' : '#0A0A0A', border: 'none', padding: '9px 22px', borderRadius: 999, fontWeight: 800, fontSize: '0.76rem', cursor: 'pointer', fontFamily: 'var(--font-sora)', transition: 'all 0.25s', whiteSpace: 'nowrap', boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }}>
           {added ? '✓ Ajouté !' : '+ Panier'}
         </button>
       </div>
       <div style={{ padding: '14px 16px 18px' }}>
-        <div style={{ fontSize: '0.62rem', color: '#AAA', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 4, fontFamily: 'var(--font-sora)' }}>{p.seller}</div>
-        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0A0A0A', marginBottom: 8, lineHeight: 1.3, fontFamily: 'var(--font-dm)' }}>{p.name}</div>
+        <div style={{ fontSize: '0.6rem', color: '#BBB', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 5, fontFamily: 'var(--font-sora)' }}>{p.seller}</div>
+        <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0A0A0A', marginBottom: 8, lineHeight: 1.35, fontFamily: 'var(--font-dm)' }}>{p.name}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 10 }}>
-          {[1,2,3,4,5].map(i => <span key={i} style={{ color: i <= Math.floor(p.rating) ? '#F9A825' : '#EBEBEB', fontSize: '0.72rem' }}>★</span>)}
-          <span style={{ fontSize: '0.68rem', color: '#AAA', marginLeft: 4 }}>({p.reviews})</span>
+          {[1,2,3,4,5].map(i => <span key={i} style={{ color: i <= Math.floor(p.rating) ? '#F9A825' : '#EBEBEB', fontSize: '0.7rem' }}>★</span>)}
+          <span style={{ fontSize: '0.66rem', color: '#BBB', marginLeft: 4 }}>({p.reviews})</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid #F5F5F5', paddingTop: 10 }}>
           <div>
             <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1rem', color: '#1B5E20' }}>{fmt(p.price)}</div>
-            {p.old_price && <div style={{ fontSize: '0.7rem', color: '#CCC', textDecoration: 'line-through' }}>{fmt(p.old_price)}</div>}
+            {p.old_price && <div style={{ fontSize: '0.68rem', color: '#CCC', textDecoration: 'line-through' }}>{fmt(p.old_price)}</div>}
           </div>
-          <button onClick={handleAdd} style={{ width: 34, height: 34, borderRadius: '50%', background: added ? '#1B5E20' : '#F5F5F5', border: 'none', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', color: added ? '#fff' : '#0A0A0A' }}>
+          <button onClick={handleAdd} style={{ width: 32, height: 32, borderRadius: '50%', background: added ? '#1B5E20' : '#F5F5F5', border: 'none', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', color: added ? '#fff' : '#0A0A0A' }}>
             {added ? '✓' : '+'}
           </button>
         </div>
