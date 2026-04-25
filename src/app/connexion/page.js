@@ -2,29 +2,29 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
 import { useAuth } from '@/context/AuthContext';
 
 export default function ConnexionPage() {
   const router = useRouter();
-  const { signInEmail, signUpEmail, signInPhone, verifyOtp, user } = useAuth();
+  const { signInEmail, signUpEmail, user } = useAuth();
 
   const [tab, setTab]         = useState('login');
-  const [method, setMethod]   = useState('email'); // 'email' | 'phone'
-  const [step, setStep]       = useState(1); // pour OTP
+  const [method, setMethod]   = useState('email');
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
   const [success, setSuccess] = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
   const [login, setLogin]   = useState({ email: '', password: '' });
   const [signup, setSignup] = useState({ prenom: '', nom: '', telephone: '', email: '', password: '', confirm: '' });
-  const [phone, setPhone]   = useState('');
-  const [otp, setOtp]       = useState('');
 
   if (user) router.push('/');
 
-  function handleLogin(e)  { setLogin(f => ({ ...f, [e.target.name]: e.target.value })); }
-  function handleSignup(e) { setSignup(f => ({ ...f, [e.target.name]: e.target.value })); }
+  const inputStyle = {
+    width: '100%', border: '1.5px solid #EBEBEB', borderRadius: 14, padding: '15px 18px',
+    fontSize: '0.94rem', outline: 'none', fontFamily: 'var(--font-dm)', color: '#0A0A0A',
+    background: '#FAFAFA', transition: 'all 0.2s', boxSizing: 'border-box',
+  };
 
   async function submitLogin(e) {
     e.preventDefault();
@@ -34,8 +34,8 @@ export default function ConnexionPage() {
       await signInEmail({ email: login.email, password: login.password });
       setSuccess(true);
       setTimeout(() => router.push('/'), 1500);
-    } catch (err) {
-      setError(err.message === 'Invalid login credentials' ? 'Email ou mot de passe incorrect.' : err.message);
+    } catch {
+      setError('Email ou mot de passe incorrect.');
     }
     setLoading(false);
   }
@@ -44,7 +44,7 @@ export default function ConnexionPage() {
     e.preventDefault();
     setError('');
     if (signup.password !== signup.confirm) { setError('Les mots de passe ne correspondent pas.'); return; }
-    if (signup.password.length < 6) { setError('Le mot de passe doit contenir au moins 6 caractères.'); return; }
+    if (signup.password.length < 6) { setError('Mot de passe minimum 6 caractères.'); return; }
     setLoading(true);
     try {
       await signUpEmail({ email: signup.email, password: signup.password, prenom: signup.prenom, nom: signup.nom, telephone: signup.telephone });
@@ -55,59 +55,29 @@ export default function ConnexionPage() {
     setLoading(false);
   }
 
-  async function submitPhone(e) {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      await signInPhone(phone);
-      setStep(2);
-    } catch (err) {
-      setError('Impossible d\'envoyer le SMS. Vérifiez le numéro.');
-    }
-    setLoading(false);
-  }
-
-  async function submitOtp(e) {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-    try {
-      await verifyOtp(phone, otp);
-      setSuccess(true);
-      setTimeout(() => router.push('/'), 1500);
-    } catch (err) {
-      setError('Code incorrect. Réessayez.');
-    }
-    setLoading(false);
-  }
-
-  const inputStyle = {
-    width: '100%', border: '1.5px solid #F0F0F0', borderRadius: 12, padding: '14px 16px',
-    fontSize: '0.92rem', outline: 'none', fontFamily: 'var(--font-dm)', color: '#0A0A0A',
-    background: '#FAFAFA', transition: 'border 0.2s', boxSizing: 'border-box',
-  };
-
   return (
-    <main style={{ background: '#F8F8F8', minHeight: '100vh', fontFamily: 'var(--font-dm)' }}>
-      <Navbar />
+    <main style={{ minHeight: '100vh', background: '#F8F8F8', fontFamily: 'var(--font-dm)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
 
-      <div style={{ maxWidth: 480, margin: '0 auto', padding: '56px 24px' }}>
+      {/* Background décoratif */}
+      <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(ellipse at 20% 20%, rgba(27,94,32,0.06) 0%, transparent 60%), radial-gradient(ellipse at 80% 80%, rgba(198,40,40,0.04) 0%, transparent 60%)', pointerEvents: 'none' }} />
+
+      <div style={{ width: '100%', maxWidth: 480, position: 'relative', zIndex: 1 }}>
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <Link href="/" style={{ textDecoration: 'none' }}>
-            <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '2rem', letterSpacing: -0.5 }}>
+          <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <img src="/logo.png" alt="BéninXi" style={{ height: 64, width: 'auto', objectFit: 'contain' }} />
+            <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.6rem', letterSpacing: -0.5 }}>
               <span style={{ color: '#1B5E20' }}>BÉNIN</span><span style={{ color: '#C62828' }}>XI</span>
             </div>
-            <div style={{ fontSize: '0.6rem', letterSpacing: 3, color: '#AAA', marginTop: 2, fontWeight: 700 }}>LE MARCHÉ DU BÉNIN</div>
+            <div style={{ fontSize: '0.58rem', letterSpacing: 3, color: '#BBB', fontWeight: 700 }}>LE MARCHÉ DU BÉNIN</div>
           </Link>
         </div>
 
         {success ? (
-          <div style={{ background: '#fff', borderRadius: 24, padding: '48px 36px', textAlign: 'center', border: '1px solid #F0F0F0', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
-            <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#F0FAF0', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '1.8rem' }}>✅</div>
-            <h2 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.4rem', color: '#0A0A0A', marginBottom: 10 }}>
+          <div style={{ background: '#fff', borderRadius: 28, padding: '52px 40px', textAlign: 'center', boxShadow: '0 8px 40px rgba(0,0,0,0.08)', border: '1px solid #F0F0F0', animation: 'scaleIn 0.3s ease' }}>
+            <div style={{ width: 76, height: 76, borderRadius: '50%', background: '#F0FAF0', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '2rem' }}>✅</div>
+            <h2 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.5rem', color: '#0A0A0A', marginBottom: 10 }}>
               {tab === 'login' ? 'Connexion réussie !' : 'Compte créé !'}
             </h2>
             <p style={{ color: '#AAA', fontSize: '0.88rem', lineHeight: 1.7 }}>
@@ -115,133 +85,113 @@ export default function ConnexionPage() {
             </p>
           </div>
         ) : (
-          <div style={{ background: '#fff', borderRadius: 24, overflow: 'hidden', border: '1px solid #F0F0F0', boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
+          <div style={{ background: '#fff', borderRadius: 28, overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.08)', border: '1px solid #F0F0F0' }}>
 
             {/* Tabs */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid #F0F0F0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: '#F8F8F8', padding: 6, margin: '20px 20px 0', borderRadius: 16, gap: 4 }}>
               {[{ id: 'login', label: 'Se connecter' }, { id: 'signup', label: 'Créer un compte' }].map(t => (
-                <button key={t.id} onClick={() => { setTab(t.id); setError(''); setStep(1); }} style={{ padding: '18px', border: 'none', background: tab === t.id ? '#fff' : '#FAFAFA', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', fontFamily: 'var(--font-sora)', color: tab === t.id ? '#0A0A0A' : '#AAA', borderBottom: `2px solid ${tab === t.id ? '#0A0A0A' : 'transparent'}`, marginBottom: -1, transition: 'all 0.2s' }}>
+                <button key={t.id} onClick={() => { setTab(t.id); setError(''); }} style={{ padding: '12px', border: 'none', background: tab === t.id ? '#fff' : 'transparent', fontWeight: 700, fontSize: '0.86rem', cursor: 'pointer', fontFamily: 'var(--font-sora)', color: tab === t.id ? '#0A0A0A' : '#AAA', borderRadius: 12, transition: 'all 0.2s', boxShadow: tab === t.id ? '0 2px 8px rgba(0,0,0,0.08)' : 'none' }}>
                   {t.label}
                 </button>
               ))}
             </div>
 
-            <div style={{ padding: '32px' }}>
+            <div style={{ padding: '28px 32px 36px' }}>
 
               {/* Erreur */}
               {error && (
-                <div style={{ background: '#FFF0F0', border: '1px solid #FFD0D0', borderRadius: 10, padding: '12px 16px', marginBottom: 18, fontSize: '0.82rem', color: '#C62828', fontWeight: 600 }}>
+                <div style={{ background: '#FFF0F0', border: '1px solid #FFCDD2', borderRadius: 12, padding: '12px 16px', marginBottom: 20, fontSize: '0.82rem', color: '#C62828', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8, animation: 'fadeUp 0.3s ease' }}>
                   ⚠️ {error}
                 </div>
               )}
 
               {/* LOGIN */}
               {tab === 'login' && (
-                <div>
-                  {/* Method toggle */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 24, background: '#F5F5F5', borderRadius: 12, padding: 4 }}>
-                    {[{ id: 'email', label: '📧 Email' }, { id: 'phone', label: '📱 Téléphone' }].map(m => (
-                      <button key={m.id} onClick={() => { setMethod(m.id); setError(''); setStep(1); }} style={{ padding: '10px', borderRadius: 10, border: 'none', background: method === m.id ? '#fff' : 'transparent', fontWeight: 700, fontSize: '0.82rem', cursor: 'pointer', fontFamily: 'var(--font-sora)', color: method === m.id ? '#0A0A0A' : '#AAA', boxShadow: method === m.id ? '0 2px 8px rgba(0,0,0,0.08)' : 'none', transition: 'all 0.2s' }}>
-                        {m.label}
-                      </button>
-                    ))}
+                <form onSubmit={submitLogin}>
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 8, fontFamily: 'var(--font-sora)', letterSpacing: 0.3 }}>EMAIL</label>
+                    <input
+                      name="email" type="email" value={login.email}
+                      onChange={e => setLogin(f => ({ ...f, email: e.target.value }))}
+                      placeholder="votre@email.com" required style={inputStyle}
+                      onFocus={e => e.target.style.borderColor = '#1B5E20'}
+                      onBlur={e => e.target.style.borderColor = '#EBEBEB'}
+                    />
                   </div>
-
-                  {method === 'email' && (
-                    <form onSubmit={submitLogin}>
-                      <div style={{ marginBottom: 14 }}>
-                        <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0A0A0A', display: 'block', marginBottom: 6, fontFamily: 'var(--font-sora)' }}>Email</label>
-                        <input name="email" type="email" value={login.email} onChange={handleLogin} placeholder="votre@email.com" required style={inputStyle} />
-                      </div>
-                      <div style={{ marginBottom: 20 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                          <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0A0A0A', fontFamily: 'var(--font-sora)' }}>Mot de passe</label>
-                          <span style={{ fontSize: '0.75rem', color: '#1B5E20', fontWeight: 600, cursor: 'pointer' }}>Oublié ?</span>
-                        </div>
-                        <input name="password" type="password" value={login.password} onChange={handleLogin} placeholder="••••••••" required style={inputStyle} />
-                      </div>
-                      <button type="submit" disabled={loading} style={{ width: '100%', background: '#0A0A0A', color: '#fff', border: 'none', padding: '15px', borderRadius: 12, fontWeight: 800, fontSize: '0.92rem', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sora)', opacity: loading ? 0.7 : 1, transition: 'all 0.2s' }}>
-                        {loading ? '⏳ Connexion...' : 'Se connecter →'}
+                  <div style={{ marginBottom: 8 }}>
+                    <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 8, fontFamily: 'var(--font-sora)', letterSpacing: 0.3 }}>MOT DE PASSE</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        name="password" type={showPass ? 'text' : 'password'} value={login.password}
+                        onChange={e => setLogin(f => ({ ...f, password: e.target.value }))}
+                        placeholder="••••••••" required style={{ ...inputStyle, paddingRight: 48 }}
+                        onFocus={e => e.target.style.borderColor = '#1B5E20'}
+                        onBlur={e => e.target.style.borderColor = '#EBEBEB'}
+                      />
+                      <button type="button" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', color: '#AAA' }}>
+                        {showPass ? '🙈' : '👁️'}
                       </button>
-                    </form>
-                  )}
-
-                  {method === 'phone' && (
-                    <div>
-                      {step === 1 && (
-                        <form onSubmit={submitPhone}>
-                          <div style={{ marginBottom: 20 }}>
-                            <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0A0A0A', display: 'block', marginBottom: 6, fontFamily: 'var(--font-sora)' }}>Numéro de téléphone</label>
-                            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+22997000000" required style={inputStyle} />
-                            <div style={{ fontSize: '0.72rem', color: '#AAA', marginTop: 6 }}>Format international : +229 suivi du numéro</div>
-                          </div>
-                          <button type="submit" disabled={loading} style={{ width: '100%', background: '#0A0A0A', color: '#fff', border: 'none', padding: '15px', borderRadius: 12, fontWeight: 800, fontSize: '0.92rem', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sora)', opacity: loading ? 0.7 : 1 }}>
-                            {loading ? '⏳ Envoi SMS...' : '📱 Recevoir le code SMS →'}
-                          </button>
-                        </form>
-                      )}
-                      {step === 2 && (
-                        <form onSubmit={submitOtp}>
-                          <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                            <div style={{ fontSize: '2rem', marginBottom: 8 }}>📱</div>
-                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0A0A0A', fontFamily: 'var(--font-sora)', marginBottom: 4 }}>Code envoyé au {phone}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#AAA' }}>Entrez le code à 6 chiffres reçu par SMS</div>
-                          </div>
-                          <div style={{ marginBottom: 20 }}>
-                            <input type="text" value={otp} onChange={e => setOtp(e.target.value)} placeholder="000000" maxLength={6} required style={{ ...inputStyle, textAlign: 'center', fontSize: '1.8rem', fontFamily: 'var(--font-sora)', fontWeight: 800, letterSpacing: 12 }} />
-                          </div>
-                          <button type="submit" disabled={loading} style={{ width: '100%', background: '#1B5E20', color: '#fff', border: 'none', padding: '15px', borderRadius: 12, fontWeight: 800, fontSize: '0.92rem', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sora)', opacity: loading ? 0.7 : 1 }}>
-                            {loading ? '⏳ Vérification...' : '✓ Vérifier le code →'}
-                          </button>
-                          <button type="button" onClick={() => { setStep(1); setOtp(''); }} style={{ width: '100%', background: 'none', border: 'none', color: '#AAA', fontSize: '0.8rem', cursor: 'pointer', marginTop: 12, fontFamily: 'var(--font-dm)' }}>
-                            ← Changer de numéro
-                          </button>
-                        </form>
-                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                  <div style={{ textAlign: 'right', marginBottom: 24 }}>
+                    <span style={{ fontSize: '0.78rem', color: '#1B5E20', fontWeight: 700, cursor: 'pointer' }}>Mot de passe oublié ?</span>
+                  </div>
+                  <button type="submit" disabled={loading} style={{ width: '100%', background: loading ? '#F0F0F0' : '#0A0A0A', color: loading ? '#AAA' : '#fff', border: 'none', padding: '16px', borderRadius: 16, fontWeight: 800, fontSize: '0.95rem', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sora)', transition: 'all 0.2s', letterSpacing: 0.3, boxShadow: loading ? 'none' : '0 8px 24px rgba(0,0,0,0.15)' }}>
+                    {loading ? '⏳ Connexion...' : 'Se connecter →'}
+                  </button>
+                </form>
               )}
 
               {/* SIGNUP */}
               {tab === 'signup' && (
                 <form onSubmit={submitSignup}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
                     <div>
-                      <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0A0A0A', display: 'block', marginBottom: 6, fontFamily: 'var(--font-sora)' }}>Prénom *</label>
-                      <input name="prenom" value={signup.prenom} onChange={handleSignup} placeholder="Kofi" required style={inputStyle} />
+                      <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 8, fontFamily: 'var(--font-sora)', letterSpacing: 0.3 }}>PRÉNOM *</label>
+                      <input name="prenom" value={signup.prenom} onChange={e => setSignup(f => ({ ...f, prenom: e.target.value }))} placeholder="Kofi" required style={inputStyle} onFocus={e => e.target.style.borderColor = '#1B5E20'} onBlur={e => e.target.style.borderColor = '#EBEBEB'} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0A0A0A', display: 'block', marginBottom: 6, fontFamily: 'var(--font-sora)' }}>Nom *</label>
-                      <input name="nom" value={signup.nom} onChange={handleSignup} placeholder="Adjovi" required style={inputStyle} />
+                      <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 8, fontFamily: 'var(--font-sora)', letterSpacing: 0.3 }}>NOM *</label>
+                      <input name="nom" value={signup.nom} onChange={e => setSignup(f => ({ ...f, nom: e.target.value }))} placeholder="Adjovi" required style={inputStyle} onFocus={e => e.target.style.borderColor = '#1B5E20'} onBlur={e => e.target.style.borderColor = '#EBEBEB'} />
                     </div>
                   </div>
-                  <div style={{ marginBottom: 14 }}>
-                    <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0A0A0A', display: 'block', marginBottom: 6, fontFamily: 'var(--font-sora)' }}>Téléphone *</label>
-                    <input name="telephone" value={signup.telephone} onChange={handleSignup} placeholder="+22997000000" required style={inputStyle} />
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 8, fontFamily: 'var(--font-sora)', letterSpacing: 0.3 }}>TÉLÉPHONE</label>
+                    <input name="telephone" value={signup.telephone} onChange={e => setSignup(f => ({ ...f, telephone: e.target.value }))} placeholder="+229 97 00 00 00" style={inputStyle} onFocus={e => e.target.style.borderColor = '#1B5E20'} onBlur={e => e.target.style.borderColor = '#EBEBEB'} />
                   </div>
-                  <div style={{ marginBottom: 14 }}>
-                    <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0A0A0A', display: 'block', marginBottom: 6, fontFamily: 'var(--font-sora)' }}>Email *</label>
-                    <input name="email" type="email" value={signup.email} onChange={handleSignup} placeholder="votre@email.com" required style={inputStyle} />
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 8, fontFamily: 'var(--font-sora)', letterSpacing: 0.3 }}>EMAIL *</label>
+                    <input name="email" type="email" value={signup.email} onChange={e => setSignup(f => ({ ...f, email: e.target.value }))} placeholder="votre@email.com" required style={inputStyle} onFocus={e => e.target.style.borderColor = '#1B5E20'} onBlur={e => e.target.style.borderColor = '#EBEBEB'} />
                   </div>
-                  <div style={{ marginBottom: 14 }}>
-                    <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0A0A0A', display: 'block', marginBottom: 6, fontFamily: 'var(--font-sora)' }}>Mot de passe * (min. 6 caractères)</label>
-                    <input name="password" type="password" value={signup.password} onChange={handleSignup} placeholder="••••••••" required style={inputStyle} />
+                  <div style={{ marginBottom: 16 }}>
+                    <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 8, fontFamily: 'var(--font-sora)', letterSpacing: 0.3 }}>MOT DE PASSE * (min. 6 caractères)</label>
+                    <div style={{ position: 'relative' }}>
+                      <input name="password" type={showPass ? 'text' : 'password'} value={signup.password} onChange={e => setSignup(f => ({ ...f, password: e.target.value }))} placeholder="••••••••" required style={{ ...inputStyle, paddingRight: 48 }} onFocus={e => e.target.style.borderColor = '#1B5E20'} onBlur={e => e.target.style.borderColor = '#EBEBEB'} />
+                      <button type="button" onClick={() => setShowPass(!showPass)} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', color: '#AAA' }}>
+                        {showPass ? '🙈' : '👁️'}
+                      </button>
+                    </div>
                   </div>
                   <div style={{ marginBottom: 20 }}>
-                    <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0A0A0A', display: 'block', marginBottom: 6, fontFamily: 'var(--font-sora)' }}>Confirmer le mot de passe *</label>
-                    <input name="confirm" type="password" value={signup.confirm} onChange={handleSignup} placeholder="••••••••" required style={inputStyle} />
+                    <label style={{ fontSize: '0.76rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 8, fontFamily: 'var(--font-sora)', letterSpacing: 0.3 }}>CONFIRMER LE MOT DE PASSE *</label>
+                    <input name="confirm" type="password" value={signup.confirm} onChange={e => setSignup(f => ({ ...f, confirm: e.target.value }))} placeholder="••••••••" required style={inputStyle} onFocus={e => e.target.style.borderColor = '#1B5E20'} onBlur={e => e.target.style.borderColor = '#EBEBEB'} />
                   </div>
-                  <p style={{ fontSize: '0.72rem', color: '#AAA', marginBottom: 20, lineHeight: 1.6 }}>
-                    En créant un compte, vous acceptez nos <span style={{ color: '#1B5E20', fontWeight: 600 }}>Conditions d'utilisation</span> et notre <span style={{ color: '#1B5E20', fontWeight: 600 }}>Politique de confidentialité</span>.
+                  <p style={{ fontSize: '0.72rem', color: '#AAA', marginBottom: 20, lineHeight: 1.7 }}>
+                    En créant un compte, vous acceptez nos <span style={{ color: '#1B5E20', fontWeight: 700 }}>Conditions</span> et notre <span style={{ color: '#1B5E20', fontWeight: 700 }}>Politique de confidentialité</span>.
                   </p>
-                  <button type="submit" disabled={loading} style={{ width: '100%', background: '#0A0A0A', color: '#fff', border: 'none', padding: '15px', borderRadius: 12, fontWeight: 800, fontSize: '0.92rem', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sora)', opacity: loading ? 0.7 : 1, transition: 'all 0.2s' }}>
+                  <button type="submit" disabled={loading} style={{ width: '100%', background: loading ? '#F0F0F0' : '#0A0A0A', color: loading ? '#AAA' : '#fff', border: 'none', padding: '16px', borderRadius: 16, fontWeight: 800, fontSize: '0.95rem', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sora)', transition: 'all 0.2s', letterSpacing: 0.3, boxShadow: loading ? 'none' : '0 8px 24px rgba(0,0,0,0.15)' }}>
                     {loading ? '⏳ Création...' : 'Créer mon compte →'}
                   </button>
                 </form>
               )}
 
-              <p style={{ textAlign: 'center', fontSize: '0.78rem', color: '#AAA', marginTop: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
+                <div style={{ flex: 1, height: 1, background: '#F0F0F0' }} />
+                <span style={{ fontSize: '0.72rem', color: '#CCC', fontWeight: 600 }}>ou</span>
+                <div style={{ flex: 1, height: 1, background: '#F0F0F0' }} />
+              </div>
+
+              <p style={{ textAlign: 'center', fontSize: '0.82rem', color: '#AAA' }}>
                 {tab === 'login' ? "Pas encore de compte ? " : "Déjà un compte ? "}
                 <span onClick={() => { setTab(tab === 'login' ? 'signup' : 'login'); setError(''); }} style={{ color: '#1B5E20', fontWeight: 700, cursor: 'pointer' }}>
                   {tab === 'login' ? 'Créer un compte' : 'Se connecter'}
@@ -251,9 +201,10 @@ export default function ConnexionPage() {
           </div>
         )}
 
+        {/* Sécurité */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 20, marginTop: 24 }}>
-          {['🔒 Sécurisé SSL', '✓ Données protégées', '🇧🇯 Made in Bénin'].map(item => (
-            <span key={item} style={{ fontSize: '0.72rem', color: '#CCC', fontWeight: 600 }}>{item}</span>
+          {['🔒 SSL sécurisé', '✓ Données protégées', '🇧🇯 Made in Bénin'].map(item => (
+            <span key={item} style={{ fontSize: '0.7rem', color: '#CCC', fontWeight: 600 }}>{item}</span>
           ))}
         </div>
       </div>
