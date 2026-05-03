@@ -1,11 +1,22 @@
 'use client';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      return JSON.parse(window.localStorage.getItem('beninxi_cart') || '[]');
+    } catch {
+      return [];
+    }
+  });
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    window.localStorage.setItem('beninxi_cart', JSON.stringify(items));
+  }, [items]);
 
   function addItem(product) {
     setItems(prev => {

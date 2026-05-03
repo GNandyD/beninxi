@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
@@ -66,7 +67,7 @@ export default function ConnexionPage() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <Link href="/" style={{ textDecoration: 'none', display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-            <img src="/logo.png" alt="BéninXi" style={{ height: 64, width: 'auto', objectFit: 'contain' }} />
+            <Image src="/logo.png" alt="BéninXi" width={160} height={64} style={{ height: 64, width: 'auto', objectFit: 'contain' }} />
             <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.6rem', letterSpacing: -0.5 }}>
               <span style={{ color: '#1B5E20' }}>BÉNIN</span><span style={{ color: '#C62828' }}>XI</span>
             </div>

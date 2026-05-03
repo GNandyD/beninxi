@@ -3,6 +3,7 @@ import { useSearchParams } from 'next/navigation';
 import { useFavorites } from '@/context/FavoritesContext';
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { supabase } from '@/lib/supabase';
 import { useCart } from '@/context/CartContext';
@@ -59,7 +60,7 @@ function ProductCard({ p }) {
       onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.04)'; }}
     >
       <div style={{ position: 'relative', height: 260, overflow: 'hidden', background: '#F8F8F8' }}>
-        <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)' }}
+        <Image src={p.img} alt={p.name} fill sizes="(max-width: 900px) 100vw, 33vw" style={{ objectFit: 'cover', transition: 'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)' }}
           onMouseEnter={e => e.target.style.transform = 'scale(1.06)'}
           onMouseLeave={e => e.target.style.transform = 'scale(1)'}
         />
@@ -103,14 +104,17 @@ function ProductCard({ p }) {
 }
 
 function CatalogueContent() {
+  const searchParams = useSearchParams();
+  const initialSearch = searchParams.get('q') || '';
+  const initialCategory = searchParams.get('cat') || 'all';
   const [products, setProducts] = useState([]);
   const [loading, setLoading]   = useState(true);
-  const [search, setSearch]     = useState('');
-  const [category, setCategory] = useState('all');
+  const [search, setSearch]     = useState(initialSearch);
+  const [category, setCategory] = useState(initialCategory);
   const [sort, setSort]         = useState('popular');
   const [priceMax, setPriceMax] = useState(500000);
   const [minRating, setMinRating] = useState(0);
-  const searchParams = useSearchParams();
+
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -119,11 +123,7 @@ function CatalogueContent() {
       setLoading(false);
     }
     load();
-    const q   = searchParams.get('q');
-    const cat = searchParams.get('cat');
-    if (q)   setSearch(q);
-    if (cat) setCategory(cat);
-  }, [searchParams]);
+  }, []);
 
   const filtered = useMemo(() => {
     let r = [...products];
@@ -244,7 +244,7 @@ function CatalogueContent() {
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               {search && (
                 <span style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F5F5F5', color: '#0A0A0A', padding: '6px 14px', borderRadius: 50, fontSize: '0.75rem', fontWeight: 600 }}>
-                  🔍 "{search}" <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '0.8rem', padding: 0, lineHeight: 1 }}>✕</button>
+                  🔍 &quot;{search}&quot; <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', fontSize: '0.8rem', padding: 0, lineHeight: 1 }}>✕</button>
                 </span>
               )}
               {priceMax < 500000 && (

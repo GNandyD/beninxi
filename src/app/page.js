@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import { useFavorites } from '@/context/FavoritesContext';
 import { supabase } from '@/lib/supabase';
@@ -67,7 +68,7 @@ function ProductCard({ p }) {
   return (
     <Link href={`/produit/${p.id}`} className="card-hover" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', background: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #F0F0F0', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
       <div className="img-zoom" style={{ position: 'relative', height: 260, overflow: 'hidden', background: '#F8F8F8' }}>
-        <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        <Image src={p.img} alt={p.name} fill sizes="(max-width: 900px) 100vw, 25vw" style={{ objectFit: 'cover' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.3) 0%, transparent 55%)' }} />
         {p.badge && (
           <div style={{ position: 'absolute', top: 12, left: 12, background: ['Luxe','Premium'].includes(p.badge) ? '#0A0A0A' : '#1B5E20', color: '#fff', padding: '4px 12px', borderRadius: 999, fontSize: '0.66rem', fontWeight: 800, fontFamily: 'var(--font-sora)', letterSpacing: 0.5 }}>
@@ -194,7 +195,7 @@ export default function HomePage() {
         {/* Image droite */}
         <div style={{ position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'clamp(32px, 6vw, 60px) clamp(16px, 5vw, 80px)' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, rgba(255,255,255,0.04) 0%, transparent 70%)' }} />
-          <img key={`img-${slide}`} src={s.img} alt="" style={{ width: '100%', maxWidth: 520, height: 520, objectFit: 'cover', borderRadius: 32, boxShadow: `0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)`, animation: 'scaleIn 0.6s ease', position: 'relative', zIndex: 1 }} />
+          <Image key={`img-${slide}`} src={s.img} alt="" width={520} height={520} sizes="(max-width: 900px) 90vw, 520px" style={{ width: '100%', maxWidth: 520, height: 520, objectFit: 'cover', borderRadius: 32, boxShadow: `0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06)`, animation: 'scaleIn 0.6s ease', position: 'relative', zIndex: 1 }} />
         </div>
 
         {/* Stats bar */}
@@ -228,7 +229,7 @@ export default function HomePage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14 }}>
           {categories.map(cat => (
             <Link key={cat.id} href={`/catalogue?cat=${cat.id}`} className="card-hover img-zoom" style={{ textDecoration: 'none', borderRadius: 20, overflow: 'hidden', position: 'relative', aspectRatio: '3/4', display: 'block', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-              <img src={cat.img} alt={cat.label} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              <Image src={cat.img} alt={cat.label} fill sizes="(max-width: 900px) 50vw, 16vw" style={{ objectFit: 'cover' }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 55%)' }} />
               <div style={{ position: 'absolute', bottom: 14, left: 14 }}>
                 <div style={{ fontSize: '1.3rem', marginBottom: 4 }}>{cat.emoji}</div>
@@ -245,7 +246,7 @@ export default function HomePage() {
           <div>
             <div style={{ fontSize: '0.7rem', color: '#C62828', fontWeight: 800, letterSpacing: 2, marginBottom: 8, fontFamily: 'var(--font-sora)' }}>⚡ OFFRE LIMITÉE</div>
             <h2 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: 'clamp(1.6rem, 3vw, 2.4rem)', color: '#fff', letterSpacing: -1, marginBottom: 8 }}>Flash Sale</h2>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.88rem', fontFamily: 'var(--font-dm)' }}>Jusqu'à -40% sur une sélection de produits</p>
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.88rem', fontFamily: 'var(--font-dm)' }}>Jusqu&apos;à -40% sur une sélection de produits</p>
           </div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             {[{ val: pad(seconds.h), label: 'H' }, { val: pad(seconds.m), label: 'MIN' }, { val: pad(seconds.s), label: 'SEC' }].map(({ val, label }, i) => (
@@ -283,7 +284,7 @@ export default function HomePage() {
             { title: 'Montres & Bijoux', sub: 'Éditions limitées', href: '/catalogue?cat=montres', img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=600&q=80', color: '#C62828' },
           ].map((b, i) => (
             <Link key={i} href={b.href} className="card-hover img-zoom" style={{ textDecoration: 'none', borderRadius: 24, overflow: 'hidden', position: 'relative', height: 280, display: 'block', boxShadow: '0 8px 32px rgba(0,0,0,0.1)' }}>
-              <img src={b.img} alt={b.title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              <Image src={b.img} alt={b.title} fill sizes="(max-width: 900px) 100vw, 50vw" style={{ objectFit: 'cover' }} />
               <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(135deg, ${b.color}CC 0%, transparent 60%)` }} />
               <div style={{ position: 'absolute', bottom: 28, left: 28 }}>
                 <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.5rem', color: '#fff', letterSpacing: -0.5, marginBottom: 6 }}>{b.title}</div>
@@ -303,7 +304,7 @@ export default function HomePage() {
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: 56, marginBottom: 56, paddingBottom: 56, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                <img src="/logo.png" alt="BéninXi" style={{ height: 40, width: 'auto', objectFit: 'contain' }} />
+                <Image src="/logo.png" alt="BéninXi" width={120} height={40} style={{ height: 40, width: 'auto', objectFit: 'contain' }} />
                 <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.3rem', color: '#fff' }}>
                   <span style={{ color: '#2A9455' }}>BÉNIN</span><span style={{ color: '#C62828' }}>XI</span>
                 </div>

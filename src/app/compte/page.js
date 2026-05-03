@@ -1,6 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { useAuth } from '@/context/AuthContext';
@@ -15,6 +16,13 @@ const statusConfig = {
   shipping:   { label: 'En livraison',  color: '#0066CC', bg: '#E3F2FD' },
   delivered:  { label: 'Livrée',        color: '#1B5E20', bg: '#F0FAF0' },
   cancelled:  { label: 'Annulée',       color: '#C62828', bg: '#FFF0F0' },
+};
+
+const paymentStatusConfig = {
+  pending:  { label: 'Paiement en attente', color: '#F57F17', bg: '#FFF8E1' },
+  paid:     { label: 'Payée',               color: '#1B5E20', bg: '#F0FAF0' },
+  failed:   { label: 'Paiement échoué',     color: '#C62828', bg: '#FFF0F0' },
+  refunded: { label: 'Remboursée',          color: '#0066CC', bg: '#E3F2FD' },
 };
 
 export default function ComptePage() {
@@ -38,32 +46,47 @@ export default function ComptePage() {
   const [newAddress, setNewAddress] = useState({ label: '', adresse: '', zone: 'cotonou_centre' });
   const [addingAddress, setAddingAddress] = useState(false);
 
-  useEffect(() => {
-    if (!user) { router.push('/connexion'); return; }
-    setProfile({
-      prenom:    user.user_metadata?.prenom    || '',
-      nom:       user.user_metadata?.nom       || '',
-      telephone: user.user_metadata?.telephone || '',
-      email:     user.email || '',
-    });
-    loadOrders();
-  }, [user]);
-
-  async function loadOrders() {
+  const loadOrders = useCallback(async () => {
     setLoadingOrders(true);
-    const { data } = await supabase
+    let query = supabase
       .from('orders')
       .select('*')
-      .eq('customer_phone', user?.user_metadata?.telephone || '')
       .order('created_at', { ascending: false });
+
+    query = user?.id
+      ? query.eq('user_id', user.id)
+      : query.eq('customer_phone', user?.user_metadata?.telephone || '');
+
+    let { data, error } = await query;
+
+    if (error && user?.user_metadata?.telephone) {
+      const fallback = await supabase
+        .from('orders')
+        .select('*')
+        .eq('customer_phone', user.user_metadata.telephone)
+        .order('created_at', { ascending: false });
+      data = fallback.data;
+    }
+
     setOrders(data || []);
     setLoadingOrders(false);
-  }
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) { router.push('/connexion'); return; }
+    const timer = window.setTimeout(loadOrders, 0);
+    return () => window.clearTimeout(timer);
+  }, [loadOrders, router, user]);
 
   async function saveProfile() {
+    const nextProfile = {
+      prenom: profile.prenom ?? user.user_metadata?.prenom ?? '',
+      nom: profile.nom ?? user.user_metadata?.nom ?? '',
+      telephone: profile.telephone ?? user.user_metadata?.telephone ?? '',
+    };
     setSavingProfile(true);
     await supabase.auth.updateUser({
-      data: { prenom: profile.prenom, nom: profile.nom, telephone: profile.telephone, full_name: `${profile.prenom} ${profile.nom}` }
+      data: { ...nextProfile, full_name: `${nextProfile.prenom} ${nextProfile.nom}` }
     });
     setSavingProfile(false);
     setProfileSaved(true);
@@ -101,7 +124,7 @@ export default function ComptePage() {
             </div>
             <div>
               <h1 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.6rem', color: '#fff', letterSpacing: -0.5, marginBottom: 4 }}>
-                {user.user_metadata?.prenom} {user.user_metadata?.nom}
+                {profile.prenom ?? user.user_metadata?.prenom} {profile.nom ?? user.user_metadata?.nom}
               </h1>
               <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>{user.email}</div>
             </div>
@@ -140,7 +163,7 @@ export default function ComptePage() {
               <div style={{ textAlign: 'center', padding: '80px 20px', background: '#fff', borderRadius: 24, border: '1px solid #F0F0F0' }}>
                 <div style={{ fontSize: '3.5rem', marginBottom: 16 }}>📦</div>
                 <h3 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.2rem', color: '#0A0A0A', marginBottom: 8 }}>Aucune commande</h3>
-                <p style={{ color: '#AAA', fontSize: '0.88rem', marginBottom: 24 }}>Vous n'avez pas encore passé de commande</p>
+                <p style={{ color: '#AAA', fontSize: '0.88rem', marginBottom: 24 }}>Vous n&apos;avez pas encore passé de commande</p>
                 <Link href="/catalogue" style={{ background: '#0A0A0A', color: '#fff', textDecoration: 'none', padding: '12px 28px', borderRadius: 50, fontWeight: 700, fontFamily: 'var(--font-sora)', fontSize: '0.88rem', display: 'inline-block' }}>
                   Découvrir les produits →
                 </Link>
@@ -155,14 +178,19 @@ export default function ComptePage() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 12 }}>
                     <div>
                       <h2 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.2rem', color: '#0A0A0A', marginBottom: 6 }}>
-                        Commande #{selectedOrder.id?.toString().slice(-8).toUpperCase()}
+                        Commande #{selectedOrder.order_number || selectedOrder.id?.toString().slice(-8).toUpperCase()}
                       </h2>
                       <div style={{ fontSize: '0.8rem', color: '#AAA' }}>
                         {new Date(selectedOrder.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
                       </div>
                     </div>
-                    <div style={{ background: statusConfig[selectedOrder.status]?.bg || '#F5F5F5', color: statusConfig[selectedOrder.status]?.color || '#666', padding: '8px 18px', borderRadius: 50, fontWeight: 800, fontSize: '0.82rem', fontFamily: 'var(--font-sora)' }}>
-                      {statusConfig[selectedOrder.status]?.label || selectedOrder.status}
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <div style={{ background: statusConfig[selectedOrder.status]?.bg || '#F5F5F5', color: statusConfig[selectedOrder.status]?.color || '#666', padding: '8px 18px', borderRadius: 50, fontWeight: 800, fontSize: '0.82rem', fontFamily: 'var(--font-sora)' }}>
+                        {statusConfig[selectedOrder.status]?.label || selectedOrder.status}
+                      </div>
+                      <div style={{ background: paymentStatusConfig[selectedOrder.payment_status]?.bg || '#F5F5F5', color: paymentStatusConfig[selectedOrder.payment_status]?.color || '#666', padding: '8px 18px', borderRadius: 50, fontWeight: 800, fontSize: '0.82rem', fontFamily: 'var(--font-sora)' }}>
+                        {paymentStatusConfig[selectedOrder.payment_status]?.label || 'Paiement en attente'}
+                      </div>
                     </div>
                   </div>
 
@@ -197,7 +225,7 @@ export default function ComptePage() {
                     {(selectedOrder.items || []).map((item, i) => (
                       <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #F5F5F5' }}>
                         <div style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', background: '#F8F8F8', flexShrink: 0 }}>
-                          <img src={item.img} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <Image src={item.img} alt={item.name} fill sizes="56px" style={{ objectFit: 'cover' }} />
                         </div>
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0A0A0A' }}>{item.name}</div>
@@ -218,7 +246,7 @@ export default function ComptePage() {
                     <div style={{ background: '#F0FAF0', borderRadius: 14, padding: '16px 20px' }}>
                       <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#AAA', marginBottom: 8, fontFamily: 'var(--font-sora)' }}>TOTAL PAYÉ</div>
                       <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.3rem', color: '#1B5E20' }}>{fmt(selectedOrder.total)}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#AAA', marginTop: 4 }}>{selectedOrder.payment_method}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#AAA', marginTop: 4 }}>{selectedOrder.payment_method} · {paymentStatusConfig[selectedOrder.payment_status]?.label || 'Paiement en attente'}</div>
                     </div>
                   </div>
                 </div>
@@ -231,7 +259,7 @@ export default function ComptePage() {
                     <div style={{ width: 48, height: 48, borderRadius: 12, background: '#F8F8F8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.4rem', flexShrink: 0 }}>📦</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0A0A0A', fontFamily: 'var(--font-sora)', marginBottom: 4 }}>
-                        Commande #{order.id?.toString().slice(-8).toUpperCase()}
+                        Commande #{order.order_number || order.id?.toString().slice(-8).toUpperCase()}
                       </div>
                       <div style={{ fontSize: '0.75rem', color: '#AAA' }}>
                         {new Date(order.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · {(order.items || []).length} article(s)
@@ -265,8 +293,8 @@ export default function ComptePage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
                 {favorites.map(p => (
                   <Link key={p.id} href={`/produit/${p.id}`} style={{ textDecoration: 'none', background: '#fff', borderRadius: 18, overflow: 'hidden', border: '1px solid #F0F0F0', display: 'block', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-                    <div style={{ height: 200, overflow: 'hidden', background: '#F8F8F8' }}>
-                      <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <div style={{ height: 200, overflow: 'hidden', background: '#F8F8F8', position: 'relative' }}>
+                      <Image src={p.img} alt={p.name} fill sizes="(max-width: 900px) 100vw, 240px" style={{ objectFit: 'cover' }} />
                     </div>
                     <div style={{ padding: '14px 16px' }}>
                       <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0A0A0A', marginBottom: 6 }}>{p.name}</div>
@@ -333,21 +361,21 @@ export default function ComptePage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
                 <div>
                   <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0A0A0A', display: 'block', marginBottom: 6, fontFamily: 'var(--font-sora)' }}>Prénom</label>
-                  <input value={profile.prenom} onChange={e => setProfile(p => ({ ...p, prenom: e.target.value }))} style={inputStyle} />
+                  <input value={profile.prenom ?? user.user_metadata?.prenom ?? ''} onChange={e => setProfile(p => ({ ...p, prenom: e.target.value }))} style={inputStyle} />
                 </div>
                 <div>
                   <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0A0A0A', display: 'block', marginBottom: 6, fontFamily: 'var(--font-sora)' }}>Nom</label>
-                  <input value={profile.nom} onChange={e => setProfile(p => ({ ...p, nom: e.target.value }))} style={inputStyle} />
+                  <input value={profile.nom ?? user.user_metadata?.nom ?? ''} onChange={e => setProfile(p => ({ ...p, nom: e.target.value }))} style={inputStyle} />
                 </div>
               </div>
               <div style={{ marginBottom: 14 }}>
                 <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0A0A0A', display: 'block', marginBottom: 6, fontFamily: 'var(--font-sora)' }}>Téléphone</label>
-                <input value={profile.telephone} onChange={e => setProfile(p => ({ ...p, telephone: e.target.value }))} style={inputStyle} />
+                <input value={profile.telephone ?? user.user_metadata?.telephone ?? ''} onChange={e => setProfile(p => ({ ...p, telephone: e.target.value }))} style={inputStyle} />
               </div>
               <div style={{ marginBottom: 28 }}>
                 <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#0A0A0A', display: 'block', marginBottom: 6, fontFamily: 'var(--font-sora)' }}>Email</label>
-                <input value={profile.email} disabled style={{ ...inputStyle, background: '#F5F5F5', color: '#AAA' }} />
-                <div style={{ fontSize: '0.72rem', color: '#CCC', marginTop: 4 }}>L'email ne peut pas être modifié</div>
+                <input value={profile.email || user.email || ''} disabled style={{ ...inputStyle, background: '#F5F5F5', color: '#AAA' }} />
+                <div style={{ fontSize: '0.72rem', color: '#CCC', marginTop: 4 }}>L&apos;email ne peut pas être modifié</div>
               </div>
               <button onClick={saveProfile} disabled={savingProfile} style={{ width: '100%', background: profileSaved ? '#1B5E20' : '#0A0A0A', color: '#fff', border: 'none', padding: '15px', borderRadius: 12, fontWeight: 800, fontSize: '0.92rem', cursor: savingProfile ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sora)', opacity: savingProfile ? 0.7 : 1, transition: 'all 0.3s' }}>
                 {profileSaved ? '✓ Profil sauvegardé !' : savingProfile ? '⏳ Sauvegarde...' : 'Sauvegarder le profil'}

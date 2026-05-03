@@ -8,11 +8,49 @@ import { supabase } from '@/lib/supabase';
 function fmt(p) { return p?.toLocaleString('fr-FR') + ' FCFA'; }
 
 const zones = [
-  { id: 'cotonou_centre', label: 'Cotonou Centre',  delai: '24–48h',    prix: 0     },
-  { id: 'grand_cotonou',  label: 'Grand Cotonou',   delai: '48–72h',    prix: 1500  },
-  { id: 'porto_novo',     label: 'Porto-Novo',      delai: '2–3 jours', prix: 2500  },
-  { id: 'parakou',        label: 'Parakou',         delai: '3–5 jours', prix: 5000  },
+  { id: 'cotonou', label: 'Cotonou',    delai: '2–7 jours', seuil: 30000  },
+  { id: 'sud',     label: 'Sud Bénin',  delai: '2–7 jours', seuil: 50000  },
+  { id: 'centre',  label: 'Centre',     delai: '2–7 jours', seuil: 75000  },
+  { id: 'nord',    label: 'Nord Bénin', delai: '2–7 jours', seuil: 100000 },
 ];
+
+const zoneVilles = {
+  cotonou: 'Cadjehoun, Akpakpa, Fidjrossè, Agla, Jéricho, Zongo, Haie Vive...',
+  sud:     'Porto-Novo, Abomey-Calavi, Ouidah, Bohicon, Abomey...',
+  centre:  'Parakou, Djougou, Natitingou, Kandi...',
+  nord:    'Malanville, Nikki, Banikoara, Kérou...',
+};
+
+const tarifs = {
+  cotonou: { petit: 500,  moyen: 1000, grand: 2500  },
+  sud:     { petit: 1000, moyen: 2000, grand: 5000  },
+  centre:  { petit: 2000, moyen: 3500, grand: 8000  },
+  nord:    { petit: 3000, moyen: 5000, grand: 12000 },
+};
+
+const colisParCategorie = {
+  vetements:  'moyen',
+  chaussures: 'moyen',
+  meubles:    'grand',
+  montres:    'petit',
+  colliers:   'petit',
+  chaines:    'petit',
+};
+
+function getTypeColis(items) {
+  const priorite = { grand: 3, moyen: 2, petit: 1 };
+  const types = items.map(item => colisParCategorie[item.category] || 'moyen');
+  return types.reduce((max, t) => priorite[t] > priorite[max] ? t : max, 'petit');
+}
+
+function getLivraison(items, zoneId, totalPrice) {
+  if (!zoneId) return 0;
+  const zone = zones.find(z => z.id === zoneId);
+  if (!zone) return 0;
+  if (totalPrice >= zone.seuil) return 0;
+  const type = getTypeColis(items);
+  return tarifs[zoneId][type];
+}
 
 const payMethods = [
   { id: 'mtn',  label: 'MTN Mobile Money', icon: '📱', color: '#FFD700', desc: 'Paiement instantané via MTN Money',  textColor: '#0A0A0A' },
@@ -45,21 +83,22 @@ function StepIndicator({ step }) {
 
 export default function PaiementPage() {
   const { items, totalPrice, clearCart } = useCart();
-  const [step, setStep]     = useState(1);
+  const [step, setStep]       = useState(1);
   const [loading, setLoading] = useState(false);
   const [orderNum, setOrderNum] = useState('');
 
   const [form, setForm] = useState({
-    prenom: '', nom: '', telephone: '', email: '', adresse: '', zone: 'cotonou_centre',
+    prenom: '', nom: '', telephone: '', email: '', adresse: '', zone: '',
   });
   const [payMethod, setPayMethod] = useState('mtn');
 
   const selectedZone = zones.find(z => z.id === form.zone);
-  const livraison    = totalPrice >= 50000 && form.zone === 'cotonou_centre' ? 0 : selectedZone?.prix || 0;
+  const livraison    = form.zone ? getLivraison(items, form.zone, totalPrice) : 0;
   const total        = totalPrice + livraison;
+  const typeColis    = items.length > 0 ? getTypeColis(items) : null;
 
   function handleForm(e) { setForm(f => ({ ...f, [e.target.name]: e.target.value })); }
-  function step1Valid()  { return form.prenom && form.nom && form.telephone && form.adresse; }
+  function step1Valid() { return form.prenom && form.nom && form.telephone && form.adresse && form.zone; }
 
   async function handleConfirm() {
     setLoading(true);
@@ -124,8 +163,8 @@ export default function PaiementPage() {
             </div>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 40 }}>
               {[
-                { icon: '🚚', label: 'Livraison',  val: selectedZone?.delai, bg: '#F0FAF0' },
-                { icon: '💰', label: 'Total payé', val: fmt(total),          bg: '#FFF8E1' },
+                { icon: '🚚', label: 'Livraison',  val: selectedZone?.delai,    bg: '#F0FAF0' },
+                { icon: '💰', label: 'Total payé', val: fmt(total),             bg: '#FFF8E1' },
                 { icon: '📱', label: 'Paiement',   val: payMethods.find(p => p.id === payMethod)?.label, bg: '#F8F8F8' },
               ].map((c, i) => (
                 <div key={i} style={{ background: c.bg, borderRadius: 16, padding: '16px 24px', textAlign: 'center', minWidth: 140 }}>
@@ -151,6 +190,7 @@ export default function PaiementPage() {
               {step === 1 && (
                 <div>
                   <h2 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.1rem', color: '#0A0A0A', marginBottom: 24 }}>📍 Informations de livraison</h2>
+
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
                     <div>
                       <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 7, fontFamily: 'var(--font-sora)', letterSpacing: 0.5 }}>PRÉNOM *</label>
@@ -161,37 +201,69 @@ export default function PaiementPage() {
                       <input name="nom" value={form.nom} onChange={handleForm} placeholder="Adjovi" style={inputStyle} onFocus={e => e.target.style.borderColor = '#1B5E20'} onBlur={e => e.target.style.borderColor = '#EBEBEB'} />
                     </div>
                   </div>
+
                   <div style={{ marginBottom: 14 }}>
                     <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 7, fontFamily: 'var(--font-sora)', letterSpacing: 0.5 }}>TÉLÉPHONE *</label>
                     <input name="telephone" value={form.telephone} onChange={handleForm} placeholder="+229 97 00 00 00" style={inputStyle} onFocus={e => e.target.style.borderColor = '#1B5E20'} onBlur={e => e.target.style.borderColor = '#EBEBEB'} />
                   </div>
+
                   <div style={{ marginBottom: 14 }}>
                     <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 7, fontFamily: 'var(--font-sora)', letterSpacing: 0.5 }}>EMAIL (optionnel)</label>
                     <input name="email" value={form.email} onChange={handleForm} placeholder="votre@email.com" style={inputStyle} onFocus={e => e.target.style.borderColor = '#1B5E20'} onBlur={e => e.target.style.borderColor = '#EBEBEB'} />
                   </div>
+
                   <div style={{ marginBottom: 20 }}>
-                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 7, fontFamily: 'var(--font-sora)', letterSpacing: 0.5 }}>ADRESSE *</label>
-                    <input name="adresse" value={form.adresse} onChange={handleForm} placeholder="Quartier, rue, description..." style={inputStyle} onFocus={e => e.target.style.borderColor = '#1B5E20'} onBlur={e => e.target.style.borderColor = '#EBEBEB'} />
+                    <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 7, fontFamily: 'var(--font-sora)', letterSpacing: 0.5 }}>ADRESSE COMPLÈTE *</label>
+                    <input name="adresse" value={form.adresse} onChange={handleForm} placeholder="Quartier, rue, point de repère..." style={inputStyle} onFocus={e => e.target.style.borderColor = '#1B5E20'} onBlur={e => e.target.style.borderColor = '#EBEBEB'} />
                   </div>
 
                   {/* Zones */}
                   <div style={{ marginBottom: 28 }}>
                     <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#555', display: 'block', marginBottom: 12, fontFamily: 'var(--font-sora)', letterSpacing: 0.5 }}>ZONE DE LIVRAISON *</label>
+
+                    {/* Info colis */}
+                    {items.length > 0 && (
+                      <div style={{ background: '#F8F8F8', borderRadius: 12, padding: '10px 14px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem' }}>
+                        <span>📦</span>
+                        <span style={{ color: '#555' }}>
+                          Type de colis détecté : <strong style={{ color: '#0A0A0A', fontFamily: 'var(--font-sora)' }}>
+                            {typeColis === 'petit' ? 'Petit (bijoux/montres)' : typeColis === 'moyen' ? 'Moyen (vêtements/chaussures)' : 'Grand (meubles)'}
+                          </strong>
+                        </span>
+                      </div>
+                    )}
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {zones.map(z => (
-                        <label key={z.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderRadius: 14, border: `1.5px solid ${form.zone === z.id ? '#0A0A0A' : '#EBEBEB'}`, background: form.zone === z.id ? '#F8F8F8' : '#fff', cursor: 'pointer', transition: 'all 0.2s' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <input type="radio" name="zone" value={z.id} checked={form.zone === z.id} onChange={handleForm} style={{ accentColor: '#0A0A0A' }} />
-                            <div>
-                              <div style={{ fontWeight: 700, fontSize: '0.86rem', color: '#0A0A0A', fontFamily: 'var(--font-sora)' }}>{z.label}</div>
-                              <div style={{ fontSize: '0.72rem', color: '#AAA', marginTop: 2 }}>{z.delai}</div>
+                      {zones.map(z => {
+                        const frais = getLivraison(items, z.id, totalPrice);
+                        const gratuit = totalPrice >= z.seuil;
+                        return (
+                          <label key={z.id} style={{ display: 'flex', flexDirection: 'column', padding: '14px 18px', borderRadius: 14, border: `1.5px solid ${form.zone === z.id ? '#0A0A0A' : '#EBEBEB'}`, background: form.zone === z.id ? '#F8F8F8' : '#fff', cursor: 'pointer', transition: 'all 0.2s' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <input type="radio" name="zone" value={z.id} checked={form.zone === z.id} onChange={handleForm} style={{ accentColor: '#0A0A0A' }} />
+                                <div>
+                                  <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0A0A0A', fontFamily: 'var(--font-sora)' }}>{z.label}</div>
+                                  <div style={{ fontSize: '0.7rem', color: '#AAA', marginTop: 2 }}>{z.delai}</div>
+                                </div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontWeight: 800, fontSize: '0.88rem', color: gratuit ? '#1B5E20' : '#0A0A0A', fontFamily: 'var(--font-sora)' }}>
+                                  {gratuit ? '🎉 Gratuit' : fmt(frais)}
+                                </div>
+                                {!gratuit && (
+                                  <div style={{ fontSize: '0.66rem', color: '#AAA', marginTop: 2 }}>
+                                    Gratuit dès {fmt(z.seuil)}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                          <div style={{ fontWeight: 800, fontSize: '0.85rem', color: z.prix === 0 ? '#1B5E20' : '#0A0A0A', fontFamily: 'var(--font-sora)' }}>
-                            {z.prix === 0 || (z.id === 'cotonou_centre' && totalPrice >= 50000) ? '🎉 Gratuit' : fmt(z.prix)}
-                          </div>
-                        </label>
-                      ))}
+                            <div style={{ fontSize: '0.68rem', color: '#BBB', marginLeft: 28, marginTop: 2 }}>
+                              {zoneVilles[z.id]}
+                            </div>
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -226,7 +298,8 @@ export default function PaiementPage() {
                   <div style={{ background: '#F8F8F8', borderRadius: 14, padding: '16px 18px', marginBottom: 24, border: '1px solid #F0F0F0' }}>
                     <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#AAA', fontFamily: 'var(--font-sora)', marginBottom: 8, letterSpacing: 1 }}>LIVRAISON À</div>
                     <div style={{ fontSize: '0.86rem', color: '#555' }}><strong style={{ color: '#0A0A0A' }}>{form.prenom} {form.nom}</strong> · {form.telephone}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#AAA', marginTop: 4 }}>{form.adresse} · {selectedZone?.label}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#AAA', marginTop: 4 }}>{form.adresse}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#AAA', marginTop: 2 }}>{selectedZone?.label} · {selectedZone?.delai}</div>
                   </div>
 
                   <button onClick={handleConfirm} disabled={loading} style={{ width: '100%', background: loading ? '#F0F0F0' : '#F9A825', color: loading ? '#AAA' : '#0A0A0A', border: 'none', padding: '16px', borderRadius: 16, fontWeight: 800, fontSize: '0.95rem', cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-sora)', transition: 'all 0.2s', boxShadow: loading ? 'none' : '0 8px 24px rgba(249,168,37,0.3)' }}>
@@ -236,7 +309,7 @@ export default function PaiementPage() {
               )}
             </div>
 
-            {/* Résumé */}
+            {/* Résumé commande */}
             <div style={{ background: '#fff', borderRadius: 24, padding: '24px', border: '1px solid #F0F0F0', boxShadow: '0 2px 16px rgba(0,0,0,0.04)', position: 'sticky', top: 100 }}>
               <h3 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '0.95rem', color: '#0A0A0A', marginBottom: 18 }}>
                 Commande · {items.length} article{items.length > 1 ? 's' : ''}
@@ -250,6 +323,7 @@ export default function PaiementPage() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0A0A0A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.name}</div>
+                      <div style={{ fontSize: '0.68rem', color: '#AAA', marginTop: 2 }}>{item.color}</div>
                     </div>
                     <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '0.82rem', color: '#0A0A0A', flexShrink: 0 }}>{fmt(item.price * item.qty)}</div>
                   </div>
@@ -257,14 +331,20 @@ export default function PaiementPage() {
               </div>
               <div style={{ borderTop: '1px solid #F5F5F5', paddingTop: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: '#888' }}>
-                  <span>Sous-total</span><span style={{ fontWeight: 600, color: '#0A0A0A' }}>{fmt(totalPrice)}</span>
+                  <span>Sous-total</span>
+                  <span style={{ fontWeight: 600, color: '#0A0A0A' }}>{fmt(totalPrice)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: '#888' }}>
-                  <span>Livraison</span>
-                  <span style={{ fontWeight: 600, color: livraison === 0 ? '#1B5E20' : '#0A0A0A' }}>
-                    {livraison === 0 ? 'Gratuite 🎉' : fmt(livraison)}
+                  <span>Livraison {form.zone && `(${selectedZone?.label})`}</span>
+                  <span style={{ fontWeight: 600, color: livraison === 0 && form.zone ? '#1B5E20' : '#0A0A0A' }}>
+                    {!form.zone ? '—' : livraison === 0 ? 'Gratuite 🎉' : fmt(livraison)}
                   </span>
                 </div>
+                {form.zone && livraison > 0 && (
+                  <div style={{ fontSize: '0.7rem', color: '#AAA', textAlign: 'right' }}>
+                    Gratuit dès {fmt(zones.find(z => z.id === form.zone)?.seuil)}
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10, borderTop: '2px solid #F5F5F5', marginTop: 4 }}>
                   <span style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1rem', color: '#0A0A0A' }}>Total</span>
                   <span style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.1rem', color: '#1B5E20' }}>{fmt(total)}</span>

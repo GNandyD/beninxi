@@ -1,6 +1,7 @@
 'use client';
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
+import Image from 'next/image';
 
 function fmt(p) { return p?.toLocaleString('fr-FR') + ' FCFA'; }
 
@@ -111,8 +112,8 @@ export default function CartDrawer() {
                   }}
                 >
                   {/* Image */}
-                  <div style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#F0F0F0' }}>
-                    <img src={item.img} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#F0F0F0', position: 'relative' }}>
+                    <Image src={item.img} alt={item.name} fill sizes="72px" style={{ objectFit: 'cover' }} />
                   </div>
 
                   {/* Info */}

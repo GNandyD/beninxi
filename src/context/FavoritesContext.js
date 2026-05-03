@@ -1,10 +1,21 @@
 'use client';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 
 const FavoritesContext = createContext(null);
 
 export function FavoritesProvider({ children }) {
-  const [favorites, setFavorites] = useState([]);
+  const [favorites, setFavorites] = useState(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      return JSON.parse(window.localStorage.getItem('beninxi_favorites') || '[]');
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem('beninxi_favorites', JSON.stringify(favorites));
+  }, [favorites]);
 
   function toggleFavorite(product) {
     setFavorites(prev => {

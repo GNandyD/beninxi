@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { supabase } from '@/lib/supabase';
 import { useCart } from '@/context/CartContext';
@@ -100,7 +101,7 @@ export default function ProductPage({ params: paramsPromise }) {
           <div>
             {/* Image principale */}
             <div style={{ borderRadius: 28, overflow: 'hidden', marginBottom: 14, position: 'relative', background: '#F8F8F8', aspectRatio: '4/3', boxShadow: '0 8px 40px rgba(0,0,0,0.08)' }}>
-              <img src={images[activeImg]} alt={product.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'opacity 0.3s ease' }} />
+              <Image src={images[activeImg]} alt={product.name} fill sizes="(max-width: 900px) 100vw, 50vw" style={{ objectFit: 'cover', transition: 'opacity 0.3s ease' }} />
               {discount > 0 && (
                 <div style={{ position: 'absolute', top: 20, left: 20, background: '#C62828', color: '#fff', padding: '8px 18px', borderRadius: 999, fontWeight: 800, fontSize: '0.88rem', fontFamily: 'var(--font-sora)' }}>
                   -{discount}%
@@ -118,8 +119,8 @@ export default function ProductPage({ params: paramsPromise }) {
             {/* Thumbnails */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
               {images.map((img, i) => (
-                <div key={i} onClick={() => setActiveImg(i)} style={{ borderRadius: 16, overflow: 'hidden', cursor: 'pointer', border: `2.5px solid ${activeImg === i ? '#0A0A0A' : 'transparent'}`, boxShadow: activeImg === i ? '0 4px 14px rgba(0,0,0,0.12)' : 'none', transition: 'all 0.2s', aspectRatio: '1', background: '#F8F8F8' }}>
-                  <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', opacity: activeImg === i ? 1 : 0.5, transition: 'opacity 0.2s' }} />
+                <div key={i} onClick={() => setActiveImg(i)} style={{ borderRadius: 16, overflow: 'hidden', cursor: 'pointer', border: `2.5px solid ${activeImg === i ? '#0A0A0A' : 'transparent'}`, boxShadow: activeImg === i ? '0 4px 14px rgba(0,0,0,0.12)' : 'none', transition: 'all 0.2s', aspectRatio: '1', background: '#F8F8F8', position: 'relative' }}>
+                  <Image src={img} alt="" fill sizes="(max-width: 900px) 25vw, 160px" style={{ objectFit: 'cover', opacity: activeImg === i ? 1 : 0.5, transition: 'opacity 0.2s' }} />
                 </div>
               ))}
             </div>
@@ -333,8 +334,8 @@ export default function ProductPage({ params: paramsPromise }) {
                   onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 16px 40px rgba(0,0,0,0.1)'; }}
                   onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.04)'; }}
                 >
-                  <div style={{ height: 200, overflow: 'hidden', background: '#F8F8F8' }}>
-                    <img src={p.img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.5s' }}
+                  <div style={{ height: 200, overflow: 'hidden', background: '#F8F8F8', position: 'relative' }}>
+                    <Image src={p.img} alt={p.name} fill sizes="(max-width: 900px) 100vw, 25vw" style={{ objectFit: 'cover', transition: 'transform 0.5s' }}
                       onMouseEnter={e => e.target.style.transform = 'scale(1.06)'}
                       onMouseLeave={e => e.target.style.transform = 'scale(1)'}
                     />

@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import Navbar from '@/components/Navbar';
 import { useFavorites } from '@/context/FavoritesContext';
 import { useCart } from '@/context/CartContext';
@@ -54,7 +55,7 @@ export default function FavorisPage() {
           <div style={{ textAlign: 'center', padding: '96px 40px', background: '#fff', borderRadius: 28, border: '1px solid #F0F0F0', boxShadow: '0 4px 24px rgba(0,0,0,0.04)', animation: 'fadeUp 0.5s ease' }}>
             <div style={{ fontSize: '4rem', marginBottom: 20 }}>🤍</div>
             <h3 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.4rem', color: '#0A0A0A', marginBottom: 10, letterSpacing: -0.3 }}>
-              Aucun favori pour l'instant
+              Aucun favori pour l&apos;instant
             </h3>
             <p style={{ color: '#AAA', fontSize: '0.9rem', marginBottom: 32, lineHeight: 1.7 }}>
               Cliquez sur ❤️ sur un produit pour le sauvegarder ici
@@ -74,9 +75,9 @@ export default function FavorisPage() {
               >
                 <Link href={`/produit/${p.id}`} style={{ textDecoration: 'none', display: 'block' }}>
                   <div style={{ position: 'relative', height: 260, overflow: 'hidden', background: '#F8F8F8' }}>
-                    <img
-                      src={p.img} alt={p.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)' }}
+                    <Image
+                      src={p.img} alt={p.name} fill sizes="(max-width: 900px) 100vw, 280px"
+                      style={{ objectFit: 'cover', transition: 'transform 0.6s cubic-bezier(0.25,0.46,0.45,0.94)' }}
                       onMouseEnter={e => e.target.style.transform = 'scale(1.06)'}
                       onMouseLeave={e => e.target.style.transform = 'scale(1)'}
                     />

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useFavorites } from '@/context/FavoritesContext';
@@ -57,7 +58,7 @@ export default function Navbar() {
 
           {/* Logo */}
           <Link href="/" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/logo.png" alt="BéninXi" style={{ height: isMobile ? 32 : 40, width: 'auto', objectFit: 'contain' }} />
+            <Image src="/logo.png" alt="BéninXi" width={120} height={40} style={{ height: isMobile ? 32 : 40, width: 'auto', objectFit: 'contain' }} />
             {!isMobile && (
               <div>
                 <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.3rem', lineHeight: 1, letterSpacing: -0.5 }}>
