@@ -10,7 +10,7 @@ const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm', weight: ['40
 
 export const metadata = {
   title: 'BéninXi — Le marché du Bénin',
-  description: 'Achetez vêtements, chaussures, meubles, montres, colliers et chaînes.',
+  description: 'Achetez smartphones, pagnes, vêtements, chaussures, meubles, montres et bijoux.',
 };
 
 export default function RootLayout({ children }) {

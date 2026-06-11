@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "BéninXi",
+    "slug": "beninxi-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "jsEngine": "jsc",
+    "scheme": "beninxi",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.beninxi.mobile"
+    },
+    "android": {
+      "package": "com.beninxi.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0A"
+      }
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "extra": {
+      "apiBaseUrl": ""
+    }
+  }
+}

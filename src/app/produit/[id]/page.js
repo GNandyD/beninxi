@@ -3,16 +3,19 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Navbar from '@/components/Navbar';
+import ProductCard from '@/components/ProductCard';
 import { supabase } from '@/lib/supabase';
 import { useCart } from '@/context/CartContext';
 import { useFavorites } from '@/context/FavoritesContext';
+import { demoProducts } from '@/data/catalog';
+import { getAvailability, mergeProducts } from '@/lib/catalog';
 
 function fmt(p) { return p?.toLocaleString('fr-FR') + ' FCFA'; }
 
 const reviewsList = [
-  { name: 'Adjoua K.',  rating: 5, date: 'Il y a 3 jours',   comment: 'Produit magnifique ! Qualité au rendez-vous, livraison rapide. Je recommande vivement BéninXi.', avatar: '👩🏾' },
-  { name: 'Kofi M.',    rating: 5, date: 'Il y a 1 semaine',  comment: 'Très satisfait de mon achat. Le produit correspond exactement à la description. Parfait !', avatar: '👨🏾' },
-  { name: 'Aminata D.', rating: 4, date: 'Il y a 2 semaines', comment: 'Bonne qualité, bon rapport qualité/prix. Livraison en 2 jours à Cotonou. Je suis satisfaite.', avatar: '👩🏿' },
+  { name: 'Adjoua K.',  rating: 5, date: 'Il y a 3 jours',   comment: 'Produit magnifique ! Qualité au rendez-vous, livraison rapide. Je recommande vivement BéninXi.', avatar: 'AK' },
+  { name: 'Kofi M.',    rating: 5, date: 'Il y a 1 semaine',  comment: 'Très satisfait de mon achat. Le produit correspond exactement à la description. Parfait !', avatar: 'KM' },
+  { name: 'Aminata D.', rating: 4, date: 'Il y a 2 semaines', comment: 'Bonne qualité, bon rapport qualité/prix. Livraison en 2 jours à Cotonou. Je suis satisfaite.', avatar: 'AD' },
 ];
 
 export default function ProductPage({ params: paramsPromise }) {
@@ -28,15 +31,21 @@ export default function ProductPage({ params: paramsPromise }) {
   const [added, setAdded]       = useState(false);
 
   const liked = isFavorite(product?.id);
+  const availability = getAvailability(product);
+  const available = availability.tone !== 'danger';
 
   useEffect(() => {
     async function load() {
       setLoading(true);
-      const { data } = await supabase.from('products').select('*').eq('id', params.id).single();
-      setProduct(data);
-      if (data) {
-        const { data: rel } = await supabase.from('products').select('*').eq('category', data.category).neq('id', data.id).limit(4);
-        setRelated(rel || []);
+      const { data } = await supabase.from('products').select('*').eq('id', params.id).maybeSingle();
+      const fallbackProduct = demoProducts.find(item => String(item.id) === String(params.id));
+      const currentProduct = data || fallbackProduct;
+
+      setProduct(currentProduct || null);
+      if (currentProduct) {
+        const { data: rel } = await supabase.from('products').select('*').eq('category', currentProduct.category).neq('id', currentProduct.id).limit(4);
+        const fallbackRelated = demoProducts.filter(item => item.category === currentProduct.category && String(item.id) !== String(currentProduct.id));
+        setRelated(mergeProducts(rel || [], fallbackRelated).slice(0, 4));
       }
       setLoading(false);
     }
@@ -44,8 +53,8 @@ export default function ProductPage({ params: paramsPromise }) {
   }, [params.id]);
 
   function handleAdd() {
-    if (!product) return;
-    addItem({ id: product.id, name: product.name, price: product.price, img: product.img, color: 'Standard', size: 'Standard', qty });
+    if (!product || !available) return;
+    addItem({ id: product.id, name: product.name, price: product.price, img: product.img, category: product.category, color: 'Standard', size: 'Standard', qty });
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   }
@@ -65,7 +74,6 @@ export default function ProductPage({ params: paramsPromise }) {
     <main style={{ background: '#fff', minHeight: '100vh' }}>
       <Navbar />
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh', flexDirection: 'column', gap: 16 }}>
-        <div style={{ fontSize: '3rem' }}>😕</div>
         <h2 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, color: '#0A0A0A' }}>Produit introuvable</h2>
         <Link href="/catalogue" style={{ background: '#0A0A0A', color: '#fff', textDecoration: 'none', padding: '12px 28px', borderRadius: 999, fontWeight: 700, fontFamily: 'var(--font-sora)', fontSize: '0.88rem' }}>
           Voir le catalogue →
@@ -95,7 +103,7 @@ export default function ProductPage({ params: paramsPromise }) {
       <div style={{ maxWidth: 1320, margin: '0 auto', padding: '52px 48px' }}>
 
         {/* ═══ MAIN GRID ═══ */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 480px', gap: 72, marginBottom: 96 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 44, marginBottom: 72 }}>
 
           {/* Galerie */}
           <div>
@@ -108,11 +116,11 @@ export default function ProductPage({ params: paramsPromise }) {
                 </div>
               )}
               <button onClick={() => toggleFavorite(product)} style={{ position: 'absolute', top: 20, right: 20, width: 48, height: 48, borderRadius: '50%', background: liked ? '#FFF0F0' : 'rgba(255,255,255,0.95)', border: liked ? '2px solid #C62828' : 'none', cursor: 'pointer', fontSize: '1.2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', transition: 'all 0.2s' }}>
-                {liked ? '❤️' : '🤍'}
+                {liked ? '♥' : '♡'}
               </button>
-              {product.stock <= 10 && (
+              {availability.tone !== 'success' && (
                 <div style={{ position: 'absolute', bottom: 20, left: 20, background: 'rgba(0,0,0,0.75)', color: '#F9A825', padding: '8px 16px', borderRadius: 10, fontSize: '0.76rem', fontWeight: 700, fontFamily: 'var(--font-sora)', backdropFilter: 'blur(8px)' }}>
-                  ⚡ Plus que {product.stock} en stock
+                  {availability.label}
                 </div>
               )}
             </div>
@@ -129,14 +137,14 @@ export default function ProductPage({ params: paramsPromise }) {
           {/* Infos */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
-            {/* Vendeur */}
+            {/* Sélection */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#0A0A0A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1rem' }}>🏪</div>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#0A0A0A', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '0.82rem', fontWeight: 900 }}>BX</div>
               <div>
-                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0A0A0A', fontFamily: 'var(--font-sora)' }}>{product.seller}</div>
-                <div style={{ fontSize: '0.7rem', color: '#AAA' }}>⭐ {product.rating} · {product.sold} ventes</div>
+                <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0A0A0A', fontFamily: 'var(--font-sora)' }}>Sélection BéninXi</div>
+                <div style={{ fontSize: '0.7rem', color: '#AAA' }}>★ {product.rating || 4.5} · {product.sold || product.reviews || 0} ventes</div>
               </div>
-              <div style={{ marginLeft: 'auto', background: '#F0FAF0', color: '#1B5E20', padding: '4px 12px', borderRadius: 999, fontSize: '0.68rem', fontWeight: 700, fontFamily: 'var(--font-sora)' }}>✓ Certifié</div>
+              <div style={{ marginLeft: 'auto', background: availability.tone === 'success' ? '#F0FAF0' : availability.tone === 'warning' ? '#FFF8E1' : '#FFF0F0', color: availability.tone === 'success' ? '#1B5E20' : availability.tone === 'warning' ? '#8A5A00' : '#C62828', padding: '4px 12px', borderRadius: 999, fontSize: '0.68rem', fontWeight: 700, fontFamily: 'var(--font-sora)' }}>{availability.label}</div>
             </div>
 
             {/* Titre */}
@@ -167,7 +175,7 @@ export default function ProductPage({ params: paramsPromise }) {
                   </span>
                 )}
                 <span style={{ background: '#F0FAF0', color: '#1B5E20', padding: '5px 13px', borderRadius: 10, fontSize: '0.74rem', fontWeight: 700 }}>
-                  ✓ En stock
+                  {availability.label}
                 </span>
               </div>
             </div>
@@ -184,24 +192,23 @@ export default function ProductPage({ params: paramsPromise }) {
 
             {/* CTA */}
             <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={handleAdd} style={{ flex: 1, background: added ? '#1B5E20' : '#0A0A0A', color: '#fff', border: 'none', padding: '18px', borderRadius: 18, fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'var(--font-sora)', transition: 'all 0.3s', letterSpacing: 0.3, boxShadow: added ? '0 8px 24px rgba(27,94,32,0.3)' : '0 8px 24px rgba(0,0,0,0.15)' }}>
-                {added ? '✓ Ajouté au panier !' : '🛒 Ajouter au panier'}
+              <button disabled={!available} onClick={handleAdd} style={{ flex: 1, background: added ? '#1B5E20' : available ? '#0A0A0A' : '#E7E7EC', color: available ? '#fff' : '#999', border: 'none', padding: '18px', borderRadius: 18, fontWeight: 800, fontSize: '0.95rem', cursor: available ? 'pointer' : 'not-allowed', fontFamily: 'var(--font-sora)', transition: 'all 0.3s', letterSpacing: 0.3, boxShadow: added ? '0 8px 24px rgba(27,94,32,0.3)' : '0 8px 24px rgba(0,0,0,0.15)' }}>
+                {added ? 'Ajouté au panier !' : 'Ajouter au panier'}
               </button>
               <Link href="/paiement" style={{ flex: 1, background: '#F9A825', color: '#0A0A0A', border: 'none', padding: '18px', borderRadius: 18, fontWeight: 800, fontSize: '0.95rem', fontFamily: 'var(--font-sora)', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', letterSpacing: 0.3, boxShadow: '0 8px 24px rgba(249,168,37,0.3)' }}>
-                ⚡ Acheter maintenant
+                Acheter maintenant
               </Link>
             </div>
 
             {/* Livraison */}
             <div style={{ background: '#F8F8F8', borderRadius: 18, padding: '20px', border: '1px solid #F0F0F0' }}>
-              <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#0A0A0A', marginBottom: 14, fontFamily: 'var(--font-sora)' }}>🚚 Livraison</div>
+              <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#0A0A0A', marginBottom: 14, fontFamily: 'var(--font-sora)' }}>Livraison</div>
               {[
-                ['📍', 'Cotonou Centre',       '24–48h',    'Gratuite dès 50 000 FCFA'],
-                ['🏙️', 'Grand Cotonou',        '48–72h',    '1 500 FCFA'              ],
-                ['🗺️', 'Porto-Novo / Parakou', '3–5 jours', 'Sur devis'               ],
-              ].map(([icon, zone, delai, prix], i) => (
+                ['Cotonou / Akpakpa', '24–72h', '1 000 FCFA'],
+                ['Calavi / Sèmè', '24–72h', '1 500 FCFA'],
+                ['Porto-Novo / Ouidah', '24–72h', 'Dès 2 000 FCFA'],
+              ].map(([zone, delai, prix], i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < 2 ? 10 : 0, fontSize: '0.82rem' }}>
-                  <span>{icon}</span>
                   <span style={{ fontWeight: 600, color: '#0A0A0A', minWidth: 150 }}>{zone}</span>
                   <span style={{ color: '#AAA' }}>{delai}</span>
                   <span style={{ marginLeft: 'auto', fontWeight: 700, color: '#1B5E20' }}>{prix}</span>
@@ -212,9 +219,9 @@ export default function ProductPage({ params: paramsPromise }) {
             {/* Paiement */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {[
-                { l: '📱 MTN Money',  bg: '#FFD700', c: '#0A0A0A' },
-                { l: '📱 Moov Money', bg: '#0066CC', c: '#fff'    },
-                { l: '💵 Espèces',    bg: '#F5F5F5', c: '#0A0A0A' },
+                { l: 'MTN Money',  bg: '#FFD700', c: '#0A0A0A' },
+                { l: 'Moov Money', bg: '#0066CC', c: '#fff'    },
+                { l: 'Carte',      bg: '#F5F5F5', c: '#0A0A0A' },
               ].map(p => (
                 <span key={p.l} style={{ background: p.bg, color: p.c, padding: '6px 14px', borderRadius: 10, fontSize: '0.72rem', fontWeight: 700 }}>{p.l}</span>
               ))}
@@ -290,12 +297,12 @@ export default function ProductPage({ params: paramsPromise }) {
             {activeTab === 'livraison' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
                 <div>
-                  <h4 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, marginBottom: 18, color: '#0A0A0A', fontSize: '0.95rem' }}>🚚 Zones & Tarifs</h4>
+                  <h4 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, marginBottom: 18, color: '#0A0A0A', fontSize: '0.95rem' }}>Zones & Tarifs</h4>
                   {[
-                    ['Cotonou Centre', '24–48h',    'Gratuite dès 50k'],
-                    ['Grand Cotonou',  '48–72h',    '1 500 FCFA'      ],
-                    ['Porto-Novo',     '2–3 jours', '2 500 FCFA'      ],
-                    ['Parakou',        '3–5 jours', '5 000 FCFA'      ],
+                    ['Cotonou / Akpakpa', '24–72h', '1 000 FCFA'],
+                    ['Fidjrossè / Godomey', '24–72h', '1 200 FCFA'],
+                    ['Calavi / Sèmè', '24–72h', '1 500 FCFA'],
+                    ['Porto-Novo à Tori-Bossito', '24–72h', '2 000 à 3 000 FCFA'],
                   ].map(([z,d,p]) => (
                     <div key={z} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '12px 0', borderBottom: '1px solid #F5F5F5', fontSize: '0.84rem' }}>
                       <span style={{ fontWeight: 600, color: '#0A0A0A' }}>{z}</span>
@@ -305,7 +312,7 @@ export default function ProductPage({ params: paramsPromise }) {
                   ))}
                 </div>
                 <div>
-                  <h4 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, marginBottom: 18, color: '#0A0A0A', fontSize: '0.95rem' }}>↩️ Politique de retour</h4>
+                  <h4 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, marginBottom: 18, color: '#0A0A0A', fontSize: '0.95rem' }}>Politique de retour</h4>
                   {['7 jours pour retourner', 'Remboursement si défaut', 'Frais retour offerts si erreur', 'Remboursement sous 5–7 jours'].map((item, i) => (
                     <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 12, fontSize: '0.84rem', color: '#666' }}>
                       <span style={{ color: '#1B5E20', fontWeight: 900 }}>✓</span>
@@ -328,25 +335,8 @@ export default function ProductPage({ params: paramsPromise }) {
               </div>
               <Link href={`/catalogue?cat=${product.category}`} style={{ color: '#1B5E20', fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none', fontFamily: 'var(--font-sora)' }}>Voir plus →</Link>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
-              {related.map(p => (
-                <Link key={p.id} href={`/produit/${p.id}`} style={{ textDecoration: 'none', background: '#fff', borderRadius: 18, overflow: 'hidden', border: '1px solid #F0F0F0', boxShadow: '0 2px 12px rgba(0,0,0,0.04)', display: 'block', transition: 'transform 0.3s, box-shadow 0.3s' }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 16px 40px rgba(0,0,0,0.1)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.04)'; }}
-                >
-                  <div style={{ height: 200, overflow: 'hidden', background: '#F8F8F8', position: 'relative' }}>
-                    <Image src={p.img} alt={p.name} fill sizes="(max-width: 900px) 100vw, 25vw" style={{ objectFit: 'cover', transition: 'transform 0.5s' }}
-                      onMouseEnter={e => e.target.style.transform = 'scale(1.06)'}
-                      onMouseLeave={e => e.target.style.transform = 'scale(1)'}
-                    />
-                  </div>
-                  <div style={{ padding: '14px 16px' }}>
-                    <div style={{ fontSize: '0.62rem', color: '#BBB', fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4, fontFamily: 'var(--font-sora)' }}>{p.seller}</div>
-                    <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#0A0A0A', marginBottom: 8, lineHeight: 1.3 }}>{p.name}</div>
-                    <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '0.95rem', color: '#1B5E20' }}>{fmt(p.price)}</div>
-                  </div>
-                </Link>
-              ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))', gap: 20 }}>
+              {related.map(p => <ProductCard key={p.id} product={p} />)}
             </div>
           </div>
         )}

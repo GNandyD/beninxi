@@ -4,26 +4,27 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
+import OrderTimeline from '@/components/OrderTimeline';
 import { useAuth } from '@/context/AuthContext';
 import { useFavorites } from '@/context/FavoritesContext';
+import {
+  ORDER_WITH_EVENTS_SELECT,
+  withSortedOrderEvents,
+} from '@/lib/orderEvents';
 import { supabase } from '@/lib/supabase';
+import {
+  deliveryZones,
+  getLocationLabel,
+  getOrderDeliveryFee,
+  getOrderSubtotal,
+  getPaymentMethodLabel,
+  getZoneLabel,
+  orderStatusConfig,
+  orderStatusFlow,
+  paymentStatusConfig,
+} from '@/lib/orderUtils';
 
 function fmt(p) { return p?.toLocaleString('fr-FR') + ' FCFA'; }
-
-const statusConfig = {
-  pending:    { label: 'En attente',    color: '#F57F17', bg: '#FFFDE7' },
-  confirmed:  { label: 'Confirmée',     color: '#1B5E20', bg: '#F0FAF0' },
-  shipping:   { label: 'En livraison',  color: '#0066CC', bg: '#E3F2FD' },
-  delivered:  { label: 'Livrée',        color: '#1B5E20', bg: '#F0FAF0' },
-  cancelled:  { label: 'Annulée',       color: '#C62828', bg: '#FFF0F0' },
-};
-
-const paymentStatusConfig = {
-  pending:  { label: 'Paiement en attente', color: '#F57F17', bg: '#FFF8E1' },
-  paid:     { label: 'Payée',               color: '#1B5E20', bg: '#F0FAF0' },
-  failed:   { label: 'Paiement échoué',     color: '#C62828', bg: '#FFF0F0' },
-  refunded: { label: 'Remboursée',          color: '#0066CC', bg: '#E3F2FD' },
-};
 
 export default function ComptePage() {
   const router = useRouter();
@@ -41,16 +42,16 @@ export default function ComptePage() {
   const [profileSaved, setProfileSaved] = useState(false);
 
   const [addresses, setAddresses] = useState([
-    { id: 1, label: 'Domicile', adresse: '', zone: 'cotonou_centre', default: true },
+    { id: 1, label: 'Domicile', adresse: '', zone: deliveryZones[0]?.id || 'sud', default: true },
   ]);
-  const [newAddress, setNewAddress] = useState({ label: '', adresse: '', zone: 'cotonou_centre' });
+  const [newAddress, setNewAddress] = useState({ label: '', adresse: '', zone: deliveryZones[0]?.id || 'sud' });
   const [addingAddress, setAddingAddress] = useState(false);
 
   const loadOrders = useCallback(async () => {
     setLoadingOrders(true);
     let query = supabase
       .from('orders')
-      .select('*')
+      .select(ORDER_WITH_EVENTS_SELECT)
       .order('created_at', { ascending: false });
 
     query = user?.id
@@ -62,13 +63,13 @@ export default function ComptePage() {
     if (error && user?.user_metadata?.telephone) {
       const fallback = await supabase
         .from('orders')
-        .select('*')
+        .select(ORDER_WITH_EVENTS_SELECT)
         .eq('customer_phone', user.user_metadata.telephone)
         .order('created_at', { ascending: false });
       data = fallback.data;
     }
 
-    setOrders(data || []);
+    setOrders(withSortedOrderEvents(data || []));
     setLoadingOrders(false);
   }, [user]);
 
@@ -100,11 +101,15 @@ export default function ComptePage() {
   };
 
   const tabs = [
-    { id: 'commandes', label: '📦 Commandes', count: orders.length },
-    { id: 'favoris',   label: '❤️ Favoris',   count: favorites.length },
-    { id: 'adresses',  label: '📍 Adresses',   count: addresses.length },
-    { id: 'profil',    label: '⚙️ Profil',     count: null },
+    { id: 'commandes', label: 'Commandes', count: orders.length },
+    { id: 'favoris',   label: 'Favoris',   count: favorites.length },
+    { id: 'adresses',  label: 'Adresses',  count: addresses.length },
+    { id: 'profil',    label: 'Profil',    count: null },
   ];
+  const selectedOrderSubtotal = selectedOrder ? getOrderSubtotal(selectedOrder) : 0;
+  const selectedOrderDeliveryFee = selectedOrder ? getOrderDeliveryFee(selectedOrder) : 0;
+  const selectedOrderLocation = selectedOrder ? getLocationLabel(selectedOrder.zone, selectedOrder.ville) : '';
+  const selectedOrderPaymentLabel = selectedOrder ? getPaymentMethodLabel(selectedOrder.payment_method) : '';
 
   if (!user) return null;
 
@@ -119,8 +124,8 @@ export default function ComptePage() {
             <Link href="/" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Accueil</Link> › Mon compte
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#1B5E20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', flexShrink: 0 }}>
-              👤
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#1B5E20', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem', fontWeight: 900, color: '#fff', flexShrink: 0 }}>
+              BX
             </div>
             <div>
               <h1 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.6rem', color: '#fff', letterSpacing: -0.5, marginBottom: 4 }}>
@@ -129,7 +134,7 @@ export default function ComptePage() {
               <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>{user.email}</div>
             </div>
             <button onClick={() => { signOut(); router.push('/'); }} style={{ marginLeft: 'auto', background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.12)', padding: '10px 20px', borderRadius: 50, fontWeight: 700, fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'var(--font-sora)' }}>
-              🚪 Déconnexion
+              Déconnexion
             </button>
           </div>
 
@@ -161,7 +166,7 @@ export default function ComptePage() {
               </div>
             ) : orders.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '80px 20px', background: '#fff', borderRadius: 24, border: '1px solid #F0F0F0' }}>
-                <div style={{ fontSize: '3.5rem', marginBottom: 16 }}>📦</div>
+                <div style={{ fontSize: '2.4rem', marginBottom: 16, fontWeight: 900, color: '#111' }}>Bag</div>
                 <h3 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.2rem', color: '#0A0A0A', marginBottom: 8 }}>Aucune commande</h3>
                 <p style={{ color: '#AAA', fontSize: '0.88rem', marginBottom: 24 }}>Vous n&apos;avez pas encore passé de commande</p>
                 <Link href="/catalogue" style={{ background: '#0A0A0A', color: '#fff', textDecoration: 'none', padding: '12px 28px', borderRadius: 50, fontWeight: 700, fontFamily: 'var(--font-sora)', fontSize: '0.88rem', display: 'inline-block' }}>
@@ -185,8 +190,8 @@ export default function ComptePage() {
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <div style={{ background: statusConfig[selectedOrder.status]?.bg || '#F5F5F5', color: statusConfig[selectedOrder.status]?.color || '#666', padding: '8px 18px', borderRadius: 50, fontWeight: 800, fontSize: '0.82rem', fontFamily: 'var(--font-sora)' }}>
-                        {statusConfig[selectedOrder.status]?.label || selectedOrder.status}
+                      <div style={{ background: orderStatusConfig[selectedOrder.status]?.bg || '#F5F5F5', color: orderStatusConfig[selectedOrder.status]?.color || '#666', padding: '8px 18px', borderRadius: 50, fontWeight: 800, fontSize: '0.82rem', fontFamily: 'var(--font-sora)' }}>
+                        {orderStatusConfig[selectedOrder.status]?.label || selectedOrder.status}
                       </div>
                       <div style={{ background: paymentStatusConfig[selectedOrder.payment_status]?.bg || '#F5F5F5', color: paymentStatusConfig[selectedOrder.payment_status]?.color || '#666', padding: '8px 18px', borderRadius: 50, fontWeight: 800, fontSize: '0.82rem', fontFamily: 'var(--font-sora)' }}>
                         {paymentStatusConfig[selectedOrder.payment_status]?.label || 'Paiement en attente'}
@@ -198,9 +203,8 @@ export default function ComptePage() {
                   <div style={{ background: '#F8F8F8', borderRadius: 16, padding: '20px 24px', marginBottom: 24 }}>
                     <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#0A0A0A', marginBottom: 16, fontFamily: 'var(--font-sora)' }}>Suivi de commande</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
-                      {['pending','confirmed','shipping','delivered'].map((s, i) => {
-                        const statuses = ['pending','confirmed','shipping','delivered'];
-                        const currentIdx = statuses.indexOf(selectedOrder.status);
+                      {orderStatusFlow.map((s, i) => {
+                        const currentIdx = orderStatusFlow.indexOf(selectedOrder.status);
                         const done = i <= currentIdx;
                         return (
                           <div key={s} style={{ display: 'flex', alignItems: 'center', flex: i < 3 ? 1 : 'none' }}>
@@ -209,7 +213,7 @@ export default function ComptePage() {
                                 {done ? '✓' : i + 1}
                               </div>
                               <div style={{ fontSize: '0.65rem', color: done ? '#1B5E20' : '#AAA', fontWeight: 600, textAlign: 'center', whiteSpace: 'nowrap' }}>
-                                {statusConfig[s]?.label}
+                                {orderStatusConfig[s]?.label}
                               </div>
                             </div>
                             {i < 3 && <div style={{ flex: 1, height: 2, background: done && i < currentIdx ? '#1B5E20' : '#F0F0F0', margin: '0 4px', marginBottom: 22, transition: 'all 0.3s' }} />}
@@ -219,12 +223,20 @@ export default function ComptePage() {
                     </div>
                   </div>
 
+                  <div style={{ marginBottom: 24 }}>
+                    <OrderTimeline
+                      events={selectedOrder.order_events}
+                      title="Historique de votre commande"
+                      emptyMessage="Aucun événement complémentaire n’a encore été ajouté."
+                    />
+                  </div>
+
                   {/* Produits */}
                   <div style={{ marginBottom: 24 }}>
                     <div style={{ fontWeight: 700, fontSize: '0.82rem', color: '#0A0A0A', marginBottom: 14, fontFamily: 'var(--font-sora)' }}>Articles commandés</div>
                     {(selectedOrder.items || []).map((item, i) => (
                       <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #F5F5F5' }}>
-                        <div style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', background: '#F8F8F8', flexShrink: 0 }}>
+                        <div style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', background: '#F8F8F8', flexShrink: 0, position: 'relative' }}>
                           <Image src={item.img} alt={item.name} fill sizes="56px" style={{ objectFit: 'cover' }} />
                         </div>
                         <div style={{ flex: 1 }}>
@@ -241,12 +253,20 @@ export default function ComptePage() {
                     <div style={{ background: '#F8F8F8', borderRadius: 14, padding: '16px 20px' }}>
                       <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#AAA', marginBottom: 8, fontFamily: 'var(--font-sora)' }}>LIVRAISON</div>
                       <div style={{ fontSize: '0.88rem', color: '#0A0A0A', fontWeight: 600 }}>{selectedOrder.address}</div>
-                      <div style={{ fontSize: '0.78rem', color: '#AAA', marginTop: 4 }}>{selectedOrder.zone}</div>
+                      <div style={{ fontSize: '0.78rem', color: '#AAA', marginTop: 4 }}>{selectedOrderLocation || getZoneLabel(selectedOrder.zone) || 'Zone non précisée'}</div>
                     </div>
                     <div style={{ background: '#F0FAF0', borderRadius: 14, padding: '16px 20px' }}>
                       <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#AAA', marginBottom: 8, fontFamily: 'var(--font-sora)' }}>TOTAL PAYÉ</div>
                       <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.3rem', color: '#1B5E20' }}>{fmt(selectedOrder.total)}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#AAA', marginTop: 4 }}>{selectedOrder.payment_method} · {paymentStatusConfig[selectedOrder.payment_status]?.label || 'Paiement en attente'}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#666', marginTop: 12 }}>
+                        <span>Sous-total</span>
+                        <span>{fmt(selectedOrderSubtotal)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#666', marginTop: 6 }}>
+                        <span>Livraison</span>
+                        <span>{fmt(selectedOrderDeliveryFee)}</span>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#AAA', marginTop: 10 }}>{selectedOrderPaymentLabel} · {paymentStatusConfig[selectedOrder.payment_status]?.label || 'Paiement en attente'}</div>
                     </div>
                   </div>
                 </div>
@@ -265,8 +285,8 @@ export default function ComptePage() {
                         {new Date(order.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} · {(order.items || []).length} article(s)
                       </div>
                     </div>
-                    <div style={{ background: statusConfig[order.status]?.bg || '#F5F5F5', color: statusConfig[order.status]?.color || '#666', padding: '6px 14px', borderRadius: 50, fontWeight: 700, fontSize: '0.75rem', fontFamily: 'var(--font-sora)', flexShrink: 0 }}>
-                      {statusConfig[order.status]?.label || order.status}
+                    <div style={{ background: orderStatusConfig[order.status]?.bg || '#F5F5F5', color: orderStatusConfig[order.status]?.color || '#666', padding: '6px 14px', borderRadius: 50, fontWeight: 700, fontSize: '0.75rem', fontFamily: 'var(--font-sora)', flexShrink: 0 }}>
+                      {orderStatusConfig[order.status]?.label || order.status}
                     </div>
                     <div style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1rem', color: '#0A0A0A', flexShrink: 0 }}>{fmt(order.total)}</div>
                     <div style={{ color: '#CCC', fontSize: '1rem' }}>›</div>
@@ -282,9 +302,9 @@ export default function ComptePage() {
           <div>
             {favorites.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '80px 20px', background: '#fff', borderRadius: 24, border: '1px solid #F0F0F0' }}>
-                <div style={{ fontSize: '3.5rem', marginBottom: 16 }}>🤍</div>
+                <div style={{ fontSize: '3rem', marginBottom: 16, color: '#111' }}>♡</div>
                 <h3 style={{ fontFamily: 'var(--font-sora)', fontWeight: 800, fontSize: '1.2rem', color: '#0A0A0A', marginBottom: 8 }}>Aucun favori</h3>
-                <p style={{ color: '#AAA', fontSize: '0.88rem', marginBottom: 24 }}>Cliquez sur ❤️ sur un produit pour le sauvegarder</p>
+                <p style={{ color: '#AAA', fontSize: '0.88rem', marginBottom: 24 }}>Clique sur le cœur d’un produit pour le sauvegarder</p>
                 <Link href="/catalogue" style={{ background: '#0A0A0A', color: '#fff', textDecoration: 'none', padding: '12px 28px', borderRadius: 50, fontWeight: 700, fontFamily: 'var(--font-sora)', fontSize: '0.88rem', display: 'inline-block' }}>
                   Voir le catalogue →
                 </Link>
@@ -318,7 +338,7 @@ export default function ComptePage() {
                     {a.default && <span style={{ background: '#F0FAF0', color: '#1B5E20', padding: '3px 10px', borderRadius: 50, fontSize: '0.68rem', fontWeight: 700 }}>Par défaut</span>}
                   </div>
                   <div style={{ fontSize: '0.85rem', color: '#555', lineHeight: 1.6 }}>{a.adresse || 'Adresse non renseignée'}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#AAA', marginTop: 6 }}>{a.zone}</div>
+                  <div style={{ fontSize: '0.75rem', color: '#AAA', marginTop: 6 }}>{getZoneLabel(a.zone) || a.zone}</div>
                 </div>
               ))}
 
@@ -334,13 +354,12 @@ export default function ComptePage() {
                   <input placeholder="Label (ex: Domicile, Bureau...)" value={newAddress.label} onChange={e => setNewAddress(a => ({ ...a, label: e.target.value }))} style={{ ...inputStyle, marginBottom: 10 }} />
                   <input placeholder="Adresse complète" value={newAddress.adresse} onChange={e => setNewAddress(a => ({ ...a, adresse: e.target.value }))} style={{ ...inputStyle, marginBottom: 10 }} />
                   <select value={newAddress.zone} onChange={e => setNewAddress(a => ({ ...a, zone: e.target.value }))} style={{ ...inputStyle, marginBottom: 14 }}>
-                    <option value="cotonou_centre">Cotonou Centre</option>
-                    <option value="grand_cotonou">Grand Cotonou</option>
-                    <option value="porto_novo">Porto-Novo</option>
-                    <option value="parakou">Parakou</option>
+                    {deliveryZones.map(zone => (
+                      <option key={zone.id} value={zone.id}>{zone.label}</option>
+                    ))}
                   </select>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => { setAddresses(prev => [...prev, { ...newAddress, id: Date.now(), default: false }]); setAddingAddress(false); setNewAddress({ label: '', adresse: '', zone: 'cotonou_centre' }); }} style={{ flex: 1, background: '#0A0A0A', color: '#fff', border: 'none', padding: '10px', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sora)', fontSize: '0.82rem' }}>
+                    <button onClick={() => { setAddresses(prev => [...prev, { ...newAddress, id: Date.now(), default: false }]); setAddingAddress(false); setNewAddress({ label: '', adresse: '', zone: deliveryZones[0]?.id || 'sud' }); }} style={{ flex: 1, background: '#0A0A0A', color: '#fff', border: 'none', padding: '10px', borderRadius: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'var(--font-sora)', fontSize: '0.82rem' }}>
                       Sauvegarder
                     </button>
                     <button onClick={() => setAddingAddress(false)} style={{ padding: '10px 16px', background: '#F5F5F5', border: 'none', borderRadius: 10, cursor: 'pointer', color: '#666', fontWeight: 600 }}>

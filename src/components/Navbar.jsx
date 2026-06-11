@@ -5,25 +5,24 @@ import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useFavorites } from '@/context/FavoritesContext';
+import { isAdminUser } from '@/lib/admin';
+import { categories as catalogCategories } from '@/data/catalog';
 
-const categories = [
-  { label: 'Vêtements',  href: '/catalogue?cat=vetements',  emoji: '👗' },
-  { label: 'Chaussures', href: '/catalogue?cat=chaussures', emoji: '👟' },
-  { label: 'Meubles',    href: '/catalogue?cat=meubles',    emoji: '🛋️' },
-  { label: 'Montres',    href: '/catalogue?cat=montres',    emoji: '⌚' },
-  { label: 'Colliers',   href: '/catalogue?cat=colliers',   emoji: '📿' },
-  { label: 'Chaînes',    href: '/catalogue?cat=chaines',    emoji: '⛓️' },
-];
+const categories = catalogCategories
+  .filter(category => category.id !== 'all')
+  .map(category => ({ label: category.label, href: `/catalogue?cat=${category.id}` }));
 
 export default function Navbar() {
   const { totalItems, setIsOpen } = useCart();
   const { user, signOut }         = useAuth();
   const { favorites }             = useFavorites();
+  const canAccessAdmin            = isAdminUser(user);
   const [search, setSearch]       = useState('');
   const [focused, setFocused]     = useState(false);
   const [showMenu, setShowMenu]   = useState(false);
   const [isMobile, setIsMobile]   = useState(false);
   const [scrolled, setScrolled]   = useState(false);
+  const searchHref = `/catalogue${search.trim() ? `?q=${encodeURIComponent(search.trim())}` : ''}`;
 
   useEffect(() => {
     function check() { setIsMobile(window.innerWidth < 768); }
@@ -79,18 +78,18 @@ export default function Navbar() {
               transition: 'all 0.25s ease',
               boxShadow: focused ? '0 0 0 4px rgba(27,94,32,0.07)' : 'none',
             }}>
-              <span style={{ padding: '0 12px 0 18px', color: '#999', fontSize: '0.85rem' }}>🔍</span>
+              <span style={{ width: 12, height: 12, border: '2px solid #999', borderRadius: 999, marginLeft: 18, marginRight: 12 }} />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
-                placeholder="Rechercher vêtements, meubles, montres..."
+                placeholder="Rechercher smartphones, pagnes, meubles..."
                 style={{ flex: 1, border: 'none', background: 'none', padding: '13px 0', fontSize: '0.88rem', outline: 'none', fontFamily: 'var(--font-dm)', color: '#0A0A0A' }}
               />
               {search && <button onClick={() => setSearch('')} style={{ padding: '0 12px', background: 'none', border: 'none', cursor: 'pointer', color: '#CCC', fontSize: '0.9rem' }}>✕</button>}
-              <Link href={`/catalogue${search ? `?q=${search}` : ''}`} style={{
+              <Link href={searchHref} style={{
                 background: '#C62828', color: '#fff',
                 padding: '0 24px', height: 46,
                 fontWeight: 700, fontSize: '0.84rem',
@@ -115,14 +114,14 @@ export default function Navbar() {
             {/* Recherche mobile */}
             {isMobile && (
               <Link href="/catalogue" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, padding: '8px 10px', textDecoration: 'none', color: '#0A0A0A' }}>
-                <span style={{ fontSize: '1.15rem' }}>🔍</span>
+                <span style={{ width: 16, height: 16, border: '2px solid #0A0A0A', borderRadius: 999 }} />
                 <span style={{ fontSize: '0.52rem', fontWeight: 600, color: '#999' }}>Chercher</span>
               </Link>
             )}
 
             {/* Favoris */}
             <Link href="/favoris" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, padding: isMobile ? '8px 10px' : '8px 12px', borderRadius: 14, textDecoration: 'none', color: '#0A0A0A', position: 'relative', transition: 'background 0.2s' }}>
-              <span style={{ fontSize: isMobile ? '1.15rem' : '1.2rem' }}>❤️</span>
+              <span style={{ fontSize: isMobile ? '1.15rem' : '1.2rem', color: '#C62828' }}>♥</span>
               {favorites.length > 0 && (
                 <span style={{ position: 'absolute', top: 4, right: 6, background: '#C62828', color: '#fff', fontSize: '0.5rem', width: 15, height: 15, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, border: '1.5px solid #fff' }}>
                   {favorites.length}
@@ -140,7 +139,7 @@ export default function Navbar() {
                   background: showMenu ? '#F0FAF0' : 'none', border: 'none', cursor: 'pointer',
                   transition: 'background 0.2s',
                 }}>
-                  <span style={{ fontSize: isMobile ? '1.15rem' : '1.2rem' }}>👤</span>
+                  <span style={{ width: 18, height: 18, borderRadius: 999, border: '2px solid #1B5E20', display: 'inline-block' }} />
                   <span style={{ fontSize: '0.52rem', fontWeight: 700, color: '#1B5E20' }}>
                     {(user.user_metadata?.prenom || 'Compte').slice(0, 8)}
                   </span>
@@ -160,9 +159,10 @@ export default function Navbar() {
                       <div style={{ fontSize: '0.7rem', color: '#BBB', marginTop: 2 }}>{user.email}</div>
                     </div>
                     {[
-                      { label: '👤 Mon compte',    href: '/compte'  },
-                      { label: '📦 Mes commandes', href: '/compte'  },
-                      { label: '❤️ Mes favoris',   href: '/favoris' },
+                      { label: 'Mon compte', href: '/compte' },
+                      { label: 'Mes commandes', href: '/compte' },
+                      { label: 'Mes favoris', href: '/favoris' },
+                      ...(canAccessAdmin ? [{ label: 'Admin commandes', href: '/admin' }] : []),
                     ].map(item => (
                       <Link key={item.label} href={item.href} onClick={() => setShowMenu(false)} style={{ display: 'block', padding: '10px 16px', borderRadius: 12, color: '#0A0A0A', textDecoration: 'none', fontSize: '0.84rem', fontWeight: 500, transition: 'background 0.15s' }}>
                         {item.label}
@@ -170,7 +170,7 @@ export default function Navbar() {
                     ))}
                     <div style={{ borderTop: '1px solid #F5F5F5', marginTop: 4, paddingTop: 4 }}>
                       <button onClick={() => { signOut(); setShowMenu(false); }} style={{ display: 'block', width: '100%', padding: '10px 16px', borderRadius: 12, color: '#C62828', background: 'none', border: 'none', fontSize: '0.84rem', fontWeight: 700, cursor: 'pointer', textAlign: 'left', fontFamily: 'var(--font-dm)' }}>
-                        🚪 Se déconnecter
+                        Se déconnecter
                       </button>
                     </div>
                   </div>
@@ -178,7 +178,7 @@ export default function Navbar() {
               </div>
             ) : (
               <Link href="/connexion" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, padding: isMobile ? '8px 10px' : '8px 12px', borderRadius: 14, textDecoration: 'none', color: '#0A0A0A' }}>
-                <span style={{ fontSize: isMobile ? '1.15rem' : '1.2rem' }}>👤</span>
+                <span style={{ width: 18, height: 18, borderRadius: 999, border: '2px solid #0A0A0A', display: 'inline-block' }} />
                 <span style={{ fontSize: '0.52rem', fontWeight: 600, color: '#999' }}>Compte</span>
               </Link>
             )}
@@ -191,7 +191,7 @@ export default function Navbar() {
               border: 'none', cursor: 'pointer', position: 'relative',
               transition: 'background 0.2s',
             }}>
-              <span style={{ fontSize: isMobile ? '1.15rem' : '1.2rem' }}>🛒</span>
+              <span style={{ fontSize: isMobile ? '1.05rem' : '1.08rem', fontWeight: 900 }}>Bag</span>
               {totalItems > 0 && (
                 <span style={{ position: 'absolute', top: 4, right: 6, background: '#C62828', color: '#fff', fontSize: '0.5rem', width: 15, height: 15, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, border: '1.5px solid #fff' }}>
                   {totalItems}
@@ -215,7 +215,7 @@ export default function Navbar() {
           </Link>
           {categories.map(cat => (
             <Link key={cat.href} href={cat.href} style={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'none', padding: isMobile ? '10px 12px' : '12px 18px', fontSize: isMobile ? '0.72rem' : '0.82rem', fontWeight: 700, whiteSpace: 'nowrap', fontFamily: 'var(--font-sora)', borderBottom: '2px solid transparent', marginBottom: -2, transition: 'all 0.2s', letterSpacing: 0.3 }}>
-              {isMobile ? cat.emoji : `${cat.emoji} ${cat.label}`}
+              {cat.label}
             </Link>
           ))}
         </div>
